@@ -33,7 +33,7 @@ const notifications = [
 
 export default function Notifications() {
   return (
-    <div className="p-8 min-h-screen bg-[#101622] flex flex-col flex-1 h-full">
+    <>
       <div className="flex justify-end mb-4">
         {/* You can add a bell icon or notification icon here if desired */}
       </div>
@@ -53,6 +53,6 @@ export default function Notifications() {
           </div>
         ))}
       </div>
-    </div>
+    </>
   );
 }

@@ -1,14 +1,22 @@
+import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { RiDashboardLine } from "react-icons/ri";
 import { IoStatsChartOutline } from "react-icons/io5";
 import { BiHistory } from "react-icons/bi";
 import { BsCart3 } from "react-icons/bs";
+import clsx from "clsx";
 
-const Navbar = () => {
+const Navbar = ({ className }) => {
   const location = useLocation();
+  const user = JSON.parse(localStorage.getItem("user"));
 
   return (
-    <nav className="fixed left-0 top-0 h-screen w-64 bg-[#1a1a1a] text-gray-300 p-4">
+    <nav
+      className={clsx(
+        "fixed left-0 top-0 h-screen w-64 bg-[#1a1a1a] text-gray-300 p-4 !z-[9999]",
+        className
+      )}
+    >
       <div className="space-y-8">
         {/* Logo Section */}
         <div className="flex items-center space-x-3 px-4">
@@ -18,9 +26,9 @@ const Navbar = () => {
         {/* Navigation Links */}
         <div className="space-y-2">
           <Link
-            to="/dashboard"
+            to="/"
             className={`flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-[#2a2a2a] hover:text-blue-500 transition-colors ${
-              location.pathname === "/dashboard"
+              location.pathname === "/"
                 ? "text-blue-500 bg-[#2a2a2a]"
                 : "text-gray-300"
             }`}

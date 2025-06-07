@@ -1,10 +1,24 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { FiUser, FiMail, FiLock, FiEye, FiEyeOff } from "react-icons/fi";
+import axios from "axios";
+
+// Create axios instance with default config
+const api = axios.create({
+  baseURL:
+    "https://ecofi-fheaf6arh9acd6ck.germanywestcentral-01.azurewebsites.net",
+  headers: {
+    "Content-Type": "application/json",
+    Accept: "application/json",
+  },
+  withCredentials: false, // Changed to false
+});
 
 function SignUp() {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    name: "",
+    firstName: "",
+    secondName: "",
     email: "",
     password: "",
     confirmPassword: "",
@@ -13,21 +27,90 @@ function SignUp() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     setError(""); // Clear error when user types
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    // Validate passwords match
     if (formData.password !== formData.confirmPassword) {
       setError("Passwords do not match!");
+      setLoading(false);
       return;
     }
 
-    setError("");
-    console.log("Signup Data:", formData);
+    // Validate password length
+    if (formData.password.length < 6) {
+      setError("Password must be at least 6 characters long");
+      setLoading(false);
+      return;
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      setError("Please enter a valid email address");
+      setLoading(false);
+      return;
+    }
+
+    // Validate names are not empty
+    if (!formData.firstName.trim() || !formData.secondName.trim()) {
+      setError("First name and second name are required");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const requestData = {
+        lname: formData.secondName.trim(),
+        fname: formData.firstName.trim(),
+        email: formData.email.trim(),
+        password: formData.password,
+      };
+
+      console.log("Sending registration request with data:", requestData);
+
+      const response = await fetch("/api/api/User/Register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify(requestData),
+      });
+
+      console.log("Response status:", response.status);
+      const responseData = await response.json();
+      console.log("Response data:", responseData);
+
+      if (response.ok) {
+        // Registration successful
+        navigate("/login"); // Redirect to login page after successful registration
+      } else {
+        // Try to get a more specific error message from the response
+        const errorMessage =
+          responseData.message ||
+          responseData.error ||
+          `Registration failed with status: ${response.status}`;
+        throw new Error(errorMessage);
+      }
+    } catch (err) {
+      console.error("Registration error details:", {
+        message: err.message,
+        error: err,
+      });
+      setError(err.message || "Failed to register. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -44,23 +127,45 @@ function SignUp() {
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">
-            {/* Name Input */}
+            {/* First Name Input */}
             <div>
-              <label htmlFor="name" className="sr-only">
-                Full Name
+              <label htmlFor="firstName" className="sr-only">
+                First Name
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <FiUser className="h-5 w-5 text-gray-400" />
                 </div>
                 <input
-                  id="name"
-                  name="name"
+                  id="firstName"
+                  name="firstName"
                   type="text"
                   required
                   className="appearance-none relative block w-full pl-10 px-3 py-3 border border-gray-700 bg-[#2a2a2a] placeholder-gray-400 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                  placeholder="Full Name"
-                  value={formData.name}
+                  placeholder="First Name"
+                  value={formData.firstName}
+                  onChange={handleChange}
+                />
+              </div>
+            </div>
+
+            {/* Second Name Input */}
+            <div>
+              <label htmlFor="secondName" className="sr-only">
+                Second Name
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <FiUser className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  id="secondName"
+                  name="secondName"
+                  type="text"
+                  required
+                  className="appearance-none relative block w-full pl-10 px-3 py-3 border border-gray-700 bg-[#2a2a2a] placeholder-gray-400 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                  placeholder="Second Name"
+                  value={formData.secondName}
                   onChange={handleChange}
                 />
               </div>
@@ -166,9 +271,10 @@ function SignUp() {
           <div>
             <button
               type="submit"
-              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+              disabled={loading}
+              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Create Account
+              {loading ? "Creating Account..." : "Create Account"}
             </button>
           </div>
 

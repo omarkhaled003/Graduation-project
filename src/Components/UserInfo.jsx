@@ -1,19 +1,23 @@
 import { useEffect, useState } from "react";
 
-const UserInfo = () => {
-  const user = {
-    firstName: "John",
-    lastName: "Doe",
-    email: "john.doe@example.com",
-    image: "https://i.pravatar.cc/150?img=1",
-  };
+const UserInfoComponent = () => {
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const userData = JSON.parse(localStorage.getItem("user"));
+    if (userData) {
+      setUser(userData);
+    }
+  }, []);
+
+  if (!user) return null;
 
   return (
     <div className="flex items-center gap-3">
       <div className="relative">
         <img
-          src={user.image}
-          alt={user.firstName}
+          src={user.image || "https://i.pravatar.cc/150?img=1"}
+          alt={user.name || "User"}
           className="w-10 h-10 rounded-full object-cover border-2 border-blue-500"
         />
         {/* Status dot (optional) */}
@@ -21,12 +25,14 @@ const UserInfo = () => {
       </div>
       <div className="text-right">
         <div className="text-white font-semibold text-sm">
-          {user.firstName} {user.lastName}
+          {user.name || "User"}
         </div>
-        <div className="text-gray-400 text-xs">{user.email}</div>
+        <div className="text-gray-400 text-xs">
+          {user.email || "user@example.com"}
+        </div>
       </div>
     </div>
   );
 };
 
-export default UserInfo;
+export default UserInfoComponent;

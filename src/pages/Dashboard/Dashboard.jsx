@@ -1,8 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
+import { FiShoppingBag } from "react-icons/fi";
 
 const Dashboard = () => {
+  const navigate = useNavigate();
+
   // Sample data based on the image
   const revenue = "EGP 20.000";
   const expenses = "EGP 10.000";
@@ -10,7 +13,7 @@ const Dashboard = () => {
   const totalPoints = "1500";
 
   const expenseCategories = [
-    { name: "Search Engine", value: 2234, color: "#38BDF8" }, // Assuming colors based on Reports page or common chart colors
+    { name: "Search Engine", value: 2234, color: "#38BDF8" },
     { name: "Food & Drinks", value: 243, color: "#4ADE80" },
     { name: "Email", value: 641, color: "#FB923C" },
     { name: "Clothes", value: 1554, color: "#FB7185" },
@@ -88,12 +91,31 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="p-4 md:p-6 space-y-6 bg-[#121212] min-h-screen text-white">
-      {/* Top Bar - Placeholder */}
-      {/* Removed placeholder user info and notification icon as they are handled by the MainLayout header */}
+    <>
+      <div className="mb-0">
+        <h1 className="text-2xl font-semibold text-white">Dashboard</h1>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
+        {/* To Buy Card */}
+        <div
+          onClick={() => navigate("/to-buy")}
+          className="bg-[#1E1E1E] rounded-xl p-6 cursor-pointer hover:bg-[#2A2A2A] transition-colors"
+        >
+          <div className="flex items-center gap-4">
+            <div className="bg-blue-600 p-3 rounded-lg">
+              <FiShoppingBag className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h2 className="text-xl font-semibold text-white">To Buy List</h2>
+              <p className="text-gray-400">Manage your shopping list</p>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Quick Stats Section */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-6">
         <div className="bg-[#1E1E1E] rounded-xl p-4 md:p-6">
           <h3 className="text-gray-400 text-sm">Revenue</h3>
           <div className="text-2xl font-bold text-white mt-2">{revenue}</div>
@@ -101,13 +123,11 @@ const Dashboard = () => {
         <div className="bg-[#1E1E1E] rounded-xl p-4 md:p-6">
           <h3 className="text-gray-400 text-sm">Expenses</h3>
           <div className="text-2xl font-bold text-white mt-2">{expenses}</div>
-          {/* Placeholder for percentage badge */}
           <div className="text-blue-400 text-xs mt-2">150%</div>
         </div>
         <div className="bg-[#1E1E1E] rounded-xl p-4 md:p-6">
           <h3 className="text-gray-400 text-sm">Money Left</h3>
           <div className="text-2xl font-bold text-white mt-2">{moneyLeft}</div>
-          {/* Placeholder for percentage badge */}
           <div className="text-blue-400 text-xs mt-2">50%</div>
         </div>
         <div className="bg-[#007BFF] rounded-xl p-4 md:p-6 flex items-center justify-center">
@@ -121,14 +141,13 @@ const Dashboard = () => {
       </div>
 
       {/* Charts and Latest Orders Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
         {/* Donut Chart Section */}
         <div className="bg-[#1E1E1E] rounded-xl p-4 md:p-6">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-white text-xl font-semibold">
               Expenses Breakdown
             </h2>
-            {/* Placeholder for total value if needed */}
             <div className="text-white text-2xl font-bold">{totalExpense}</div>
           </div>
           <div className="h-[250px] flex flex-col items-center">
@@ -148,7 +167,6 @@ const Dashboard = () => {
                   ))}
                 </Pie>
                 <Tooltip content={<CustomTooltip />} />
-                {/* Center text for total value if needed */}
                 <text
                   x="50%"
                   y="50%"
@@ -162,13 +180,16 @@ const Dashboard = () => {
               </PieChart>
             </ResponsiveContainer>
             <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 mt-4 text-sm">
-              {expenseCategories.map((item, index) => (
-                <div key={index} className="flex items-center space-x-1">
+              {expenseCategories.map((category, index) => (
+                <div
+                  key={index}
+                  className="flex items-center gap-2 text-gray-400"
+                >
                   <div
-                    className="w-2 h-2 rounded-full"
-                    style={{ backgroundColor: item.color }}
+                    className="w-3 h-3 rounded-full"
+                    style={{ backgroundColor: category.color }}
                   />
-                  <span className="text-gray-400">{item.name}</span>
+                  <span>{category.name}</span>
                 </div>
               ))}
             </div>
@@ -180,60 +201,36 @@ const Dashboard = () => {
           <h2 className="text-white text-xl font-semibold mb-4">
             Latest Orders
           </h2>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-gray-400">
-              <thead>
-                <tr className="text-sm text-gray-300 uppercase bg-[#2A2A2A]">
-                  <th scope="col" className="px-3 py-2 rounded-l-lg">
-                    Product
-                  </th>
-                  <th scope="col" className="px-3 py-2">
-                    Quantity
-                  </th>
-                  <th scope="col" className="px-3 py-2">
-                    Date
-                  </th>
-                  <th scope="col" className="px-3 py-2">
-                    Shop Name
-                  </th>
-                  <th scope="col" className="px-3 py-2">
-                    Categories
-                  </th>
-                  <th scope="col" className="px-3 py-2 rounded-r-lg">
-                    Price
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {latestOrders.map((order) => (
-                  <tr
-                    key={order.id}
-                    className="border-b border-[#2A2A2A] hover:bg-[#2A2A2A]"
-                  >
-                    <td className="px-3 py-3 font-medium text-white">
-                      {order.product}
-                    </td>
-                    <td className="px-3 py-3">{order.quantity}</td>
-                    <td className="px-3 py-3">{order.date}</td>
-                    <td className="px-3 py-3">{order.shopName}</td>
-                    <td className="px-3 py-3 flex items-center">
-                      <div
-                        className="w-2 h-2 rounded-full mr-2"
-                        style={{ backgroundColor: order.categoryColor }}
-                      />
-                      <span>{order.category}</span>
-                    </td>
-                    <td className="px-3 py-3 text-white">
-                      ${order.price.toFixed(2)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="space-y-4">
+            {latestOrders.map((order) => (
+              <div
+                key={order.id}
+                className="flex items-center justify-between p-3 bg-[#2A2A2A] rounded-lg"
+              >
+                <div className="flex items-center space-x-3">
+                  <div
+                    className="w-3 h-3 rounded-full"
+                    style={{ backgroundColor: order.categoryColor }}
+                  />
+                  <div>
+                    <p className="text-white font-medium">{order.product}</p>
+                    <p className="text-gray-400 text-sm">
+                      {order.shopName} • {order.date}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-white font-medium">
+                    EGP {order.price.toFixed(2)}
+                  </p>
+                  <p className="text-gray-400 text-sm">Qty: {order.quantity}</p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

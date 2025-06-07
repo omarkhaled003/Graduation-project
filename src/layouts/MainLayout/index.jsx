@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Outlet } from "react-router-dom";
 import Navbar from "../../Components/Navbar";
-import UserInfo from "../../Components/UserInfo";
+import UserInfo from "../../components/UserInfo";
 import NotificationRing from "../../Components/NotificationRing";
 import Chatbot from "../../Components/Chatbot";
 import { FiMessageCircle } from "react-icons/fi";
@@ -22,7 +22,7 @@ export default function MainLayout() {
           <NotificationRing />
           <UserInfo />
         </header>
-        <main className="flex-1 p-8 min-h-0 h-screen overflow-auto pt-16 flex justify-center items-start">
+        <main className="flex-1 p-8 min-h-0 h-screen overflow-auto pt-16">
           <Outlet />
         </main>
       </div>
