@@ -1,13 +1,32 @@
-import { useState } from "react";
-import { Outlet } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Outlet, useNavigate } from "react-router-dom";
 import Navbar from "../../Components/Navbar";
-import UserInfo from "../../components/UserInfo";
+import UserInfo from "../../Components/UserInfo";
 import NotificationRing from "../../Components/NotificationRing";
 import Chatbot from "../../Components/Chatbot";
 import { FiMessageCircle } from "react-icons/fi";
 
 export default function MainLayout() {
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
+  const [user, setUser] = useState(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (e) {
+        console.error("Failed to parse user from localStorage:", e);
+        localStorage.removeItem("user");
+        localStorage.removeItem("token");
+        navigate("/login");
+      }
+    } else {
+      // If no user in localStorage, redirect to login
+      navigate("/login");
+    }
+  }, [navigate]);
 
   const toggleChatbot = () => {
     setIsChatbotOpen(!isChatbotOpen);
@@ -20,7 +39,7 @@ export default function MainLayout() {
         {/* Header Bar */}
         <header className="fixed top-0 right-0 left-64 z-40 flex justify-end items-center bg-[#121212] gap-6 p-4">
           <NotificationRing />
-          <UserInfo />
+          <UserInfo user={user} />
         </header>
         <main className="flex-1 p-8 min-h-0 h-screen overflow-auto pt-16">
           <Outlet />

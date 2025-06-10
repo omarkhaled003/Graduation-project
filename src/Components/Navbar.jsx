@@ -61,6 +61,8 @@ const Navbar = ({ className }) => {
             <span>History</span>
           </Link>
 
+          {/* Removed To Buy Link */}
+
           <Link
             to="/to-buy"
             className={`flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-[#2a2a2a] hover:text-blue-500 transition-colors ${

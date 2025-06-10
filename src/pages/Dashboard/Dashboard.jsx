@@ -98,24 +98,10 @@ const Dashboard = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
         {/* To Buy Card */}
-        <div
-          onClick={() => navigate("/to-buy")}
-          className="bg-[#1E1E1E] rounded-xl p-6 cursor-pointer hover:bg-[#2A2A2A] transition-colors"
-        >
-          <div className="flex items-center gap-4">
-            <div className="bg-blue-600 p-3 rounded-lg">
-              <FiShoppingBag className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h2 className="text-xl font-semibold text-white">To Buy List</h2>
-              <p className="text-gray-400">Manage your shopping list</p>
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* Quick Stats Section */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
         <div className="bg-[#1E1E1E] rounded-xl p-4 md:p-6">
           <h3 className="text-gray-400 text-sm">Revenue</h3>
           <div className="text-2xl font-bold text-white mt-2">{revenue}</div>
@@ -129,14 +115,6 @@ const Dashboard = () => {
           <h3 className="text-gray-400 text-sm">Money Left</h3>
           <div className="text-2xl font-bold text-white mt-2">{moneyLeft}</div>
           <div className="text-blue-400 text-xs mt-2">50%</div>
-        </div>
-        <div className="bg-[#007BFF] rounded-xl p-4 md:p-6 flex items-center justify-center">
-          <div className="text-center">
-            <h3 className="text-white text-sm">Total Points</h3>
-            <div className="text-3xl font-bold text-white mt-1">
-              {totalPoints}
-            </div>
-          </div>
         </div>
       </div>
 

@@ -109,7 +109,7 @@ const ProductDetails = () => {
 
   return (
     <div className="p-4 md:p-6 space-y-6 bg-[#121212] min-h-screen text-white">
-      <h1 className="text-3xl font-bold mb-4">Product Details for ID: {id}</h1>
+      <h1 className="text-3xl font-bold mb-4">Product Details</h1>
       {productDetails ? (
         <div className="bg-[#1E1E1E] rounded-xl p-4 md:p-6 shadow-md flex flex-col sm:flex-row gap-6">
           <div className="flex-shrink-0">
@@ -117,7 +117,7 @@ const ProductDetails = () => {
               <img
                 src={productDetails.image}
                 alt={productDetails.productName}
-                className="w-full max-w-xs h-auto object-contain rounded-lg mb-4 bg-white p-2"
+                className="w-full max-w-xs h-auto object-contain rounded-lg mb-4 bg-[#1E1E1E] p-2 shadow-md"
               />
             )}
           </div>
