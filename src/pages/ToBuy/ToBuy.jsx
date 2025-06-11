@@ -8,7 +8,7 @@ import {
   FiChevronRight,
 } from "react-icons/fi";
 import { AiFillStar } from "react-icons/ai";
-import axios from "axios";
+import api from "../../utils/api"; // Import the shared API instance
 
 const ToBuy = () => {
   const navigate = useNavigate();
@@ -52,38 +52,6 @@ const ToBuy = () => {
       logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Carrefour_logo.svg/2560px-Carrefour_logo.svg.png",
     },
   ];
-
-  // Create axios instance with default config
-  const api = axios.create({
-    baseURL: "/api",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-    timeout: 600000,
-  });
-
-  // Add request interceptor to add token to all requests
-  api.interceptors.request.use((config) => {
-    const user = JSON.parse(localStorage.getItem("user"));
-    if (user?.token) {
-      config.headers.Authorization = `Bearer ${user.token}`;
-    }
-    return config;
-  });
-
-  // Add response interceptor to handle errors
-  api.interceptors.response.use(
-    (response) => response,
-    async (error) => {
-      if (error.code === "ERR_NETWORK") {
-        console.error("Network error occurred:", error);
-      } else if (error.code === "ECONNABORTED") {
-        console.error("Request timeout:", error);
-      }
-      return Promise.reject(error);
-    }
-  );
 
   const fetchProducts = async () => {
     try {
@@ -199,28 +167,75 @@ const ToBuy = () => {
 
   const removeProduct = async (id) => {
     try {
-      await api.delete("/ToBuyList/DeleteFromToBuyList", {
-        params: {
-          id: id,
-        },
-      });
-      setAllProducts(allProducts.filter((product) => product.id !== id)); // Update all products
+      setLoading(true);
+      await api.delete(`/ToBuyList/RemoveProduct/${id}`);
+      fetchProducts(); // Refetch all products to update the list
+      fetchShoppingList(); // Also refetch shopping list to update
       setError(null);
-    } catch (error) {
-      console.error("Error removing product:", error);
+    } catch (err) {
+      console.error("Error removing product:", err);
       let errorMessage = "Failed to remove product. ";
-      if (error.code === "ERR_NETWORK") {
-        errorMessage += "Please check your internet connection.";
+      if (err.code === "ECONNABORTED") {
+        errorMessage += "Request timed out.";
+      } else if (err.code === "ERR_NETWORK") {
+        errorMessage += "Network error.";
       } else {
-        errorMessage += error.response?.data?.message || error.message;
+        errorMessage += err.response?.data?.message || err.message;
       }
       setError(errorMessage);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handlePageChange = (newPage) => {
-    setCurrentPage(newPage);
+  const clearShoppingList = async () => {
+    try {
+      setLoading(true);
+      await api.delete("/ToBuyList/ClearToBuyList");
+      fetchProducts(); // Refetch all products to update the list
+      fetchShoppingList(); // Also refetch shopping list to update
+      setError(null);
+    } catch (err) {
+      console.error("Error clearing shopping list:", err);
+      let errorMessage = "Failed to clear shopping list. ";
+      if (err.code === "ECONNABORTED") {
+        errorMessage += "Request timed out.";
+      } else if (err.code === "ERR_NETWORK") {
+        errorMessage += "Network error.";
+      } else {
+        errorMessage += err.response?.data?.message || err.message;
+      }
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const buySelectedProducts = async () => {
+    try {
+      setLoading(true);
+      await api.post("/ToBuyList/BuySelectedProducts", shoppingList);
+      setShoppingList([]); // Clear local shopping list after buying
+      fetchProducts(); // Refetch all products to update the list
+      fetchShoppingList(); // Also refetch shopping list to update
+      setError(null);
+    } catch (err) {
+      console.error("Error buying selected products:", err);
+      let errorMessage = "Failed to buy selected products. ";
+      if (err.code === "ECONNABORTED") {
+        errorMessage += "Request timed out.";
+      } else if (err.code === "ERR_NETWORK") {
+        errorMessage += "Network error.";
+      } else {
+        errorMessage += err.response?.data?.message || err.message;
+      }
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const totalPages = Math.ceil(displayedProducts.length / productsPerPage);
 
   const indexOfLastProduct = currentPage * productsPerPage;
   const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
@@ -228,12 +243,43 @@ const ToBuy = () => {
     indexOfFirstProduct,
     indexOfLastProduct
   );
-  const totalPages = Math.ceil(displayedProducts.length / productsPerPage);
+
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+    }
+  };
 
   const getPageNumbers = () => {
     const pageNumbers = [];
-    for (let i = 1; i <= totalPages; i++) {
-      pageNumbers.push(i);
+    if (totalPages <= 5) {
+      for (let i = 1; i <= totalPages; i++) {
+        pageNumbers.push(i);
+      }
+    } else {
+      if (currentPage <= 3) {
+        for (let i = 1; i <= 5; i++) {
+          pageNumbers.push(i);
+        }
+        pageNumbers.push("...");
+        pageNumbers.push(totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        pageNumbers.push(1);
+        pageNumbers.push("...");
+        for (let i = totalPages - 4; i <= totalPages; i++) {
+          pageNumbers.push(i);
+        }
+      } else {
+        pageNumbers.push(1);
+        pageNumbers.push("...");
+        for (let i = currentPage - 1; i <= currentPage + 1; i++) {
+          pageNumbers.push(i);
+        }
+        pageNumbers.push("...");
+        pageNumbers.push(totalPages);
+      }
     }
     return pageNumbers;
   };

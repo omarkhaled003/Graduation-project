@@ -1,11 +1,14 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import { FiCamera, FiUser, FiDollarSign, FiFlag } from "react-icons/fi";
-import axios from "axios";
+import api from "../utils/api";
+import UserInfoContext from "../Context/User/UserInfoContext";
 
 const EditProfile = () => {
+  const { user } = useContext(UserInfoContext);
   const [formData, setFormData] = useState({
     image: null,
-    name: "",
+    firstName: "",
+    lastName: "",
     salary: "",
     savingGoal: "",
   });
@@ -31,29 +34,142 @@ const EditProfile = () => {
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const sendFinancialGoal = async (salary, savingGoal) => {
     setLoading(true);
     setError(null);
     setSuccess(null);
 
-    // For demonstration, we'll just log the data.
-    // In a real application, you would send this to your backend API.
-    console.log("Submitting profile data:", formData);
+    if (!user || !user.token) {
+      setError("User not authenticated. Please log in.");
+      setLoading(false);
+      return;
+    }
 
     try {
-      // Here you would make an API call to update the user profile
-      // Example (replace with your actual endpoint and data structure):
-      // const response = await axios.put('/api/user/profile', formData);
-      // console.log('Profile updated successfully:', response.data);
-
-      // Simulate an API call
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      setSuccess("Profile updated successfully!");
+      const response = await api.post("/FinancialGoal/SetFinanicalGoal", {
+        salary: parseFloat(salary),
+        savingGoal: parseFloat(savingGoal),
+      });
+      setSuccess("Financial goals updated successfully!");
+      console.log("Financial goals updated successfully:", response.data);
     } catch (err) {
-      console.error("Error updating profile:", err);
-      setError(err.message || "Failed to update profile.");
+      console.error("Error updating financial goals:", err);
+      if (err.response) {
+        setError(err.response.data || "Failed to update financial goals.");
+      } else {
+        setError(
+          "Failed to update financial goals. Network error or server is down."
+        );
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdateUserInfo = async () => {
+    setLoading(true);
+    setError(null);
+    setSuccess(null);
+
+    if (!user || !user.token) {
+      setError("User not authenticated. Please log in.");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const response = await api.put("/User/UpdateInfo", {
+        fname: formData.firstName,
+        lname: formData.lastName,
+      });
+      setSuccess("Profile information updated successfully!");
+      console.log("Profile information updated successfully:", response.data);
+    } catch (err) {
+      console.error("Error updating profile information:", err);
+      if (err.response) {
+        setError(err.response.data || "Failed to update profile information.");
+      } else {
+        setError(
+          "Failed to update profile information. Network error or server is down."
+        );
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdatePhoto = async () => {
+    setLoading(true);
+    setError(null);
+    setSuccess(null);
+
+    if (!user || !user.token) {
+      setError("User not authenticated. Please log in.");
+      setLoading(false);
+      return;
+    }
+    if (!formData.image) {
+      setError("Please select an image to upload.");
+      setLoading(false);
+      return;
+    }
+
+    const photoFormData = new FormData();
+    photoFormData.append("file", formData.image);
+
+    try {
+      const response = await api.put("/User/AddPhoto", photoFormData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      setSuccess("Profile photo updated successfully!");
+      console.log("Profile photo updated successfully:", response.data);
+    } catch (err) {
+      console.error("Error updating profile photo:", err);
+      if (err.response) {
+        setError(err.response.data || "Failed to update profile photo.");
+      } else {
+        setError(
+          "Failed to update profile photo. Network error or server is down."
+        );
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSetFinancialGoal = async () => {
+    await sendFinancialGoal(formData.salary, formData.savingGoal);
+  };
+
+  const handleUpdateFinancialGoal = async () => {
+    setLoading(true);
+    setError(null);
+    setSuccess(null);
+
+    if (!user || !user.token) {
+      setError("User not authenticated. Please log in.");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const response = await api.put("/FinancialGoal/UpdateFinancialGoal", {
+        salary: parseFloat(formData.salary),
+        savingGoal: parseFloat(formData.savingGoal),
+      });
+      setSuccess("Financial goals updated successfully!");
+      console.log("Financial goals updated successfully:", response.data);
+    } catch (err) {
+      console.error("Error updating financial goals:", err);
+      if (err.response) {
+        setError(err.response.data || "Failed to update financial goals.");
+      } else {
+        setError(
+          "Failed to update financial goals. Network error or server is down."
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -67,7 +183,25 @@ const EditProfile = () => {
 
       {error && (
         <div className="bg-red-500/10 border border-red-500 text-red-500 px-4 py-2 rounded-md">
-          {error}
+          {typeof error === "object" ? (
+            error.response?.data?.errors ? (
+              Object.entries(error.response.data.errors).map(
+                ([field, fieldErrors]) => (
+                  <p key={field}>
+                    <strong>{field}:</strong> {fieldErrors.join(", ")}
+                  </p>
+                )
+              )
+            ) : error.response?.data?.message ? (
+              <p>{error.response.data.message}</p>
+            ) : error.response?.data?.title ? (
+              <p>{error.response.data.title}</p>
+            ) : (
+              <p>{error.message || "An unknown error occurred."}</p>
+            )
+          ) : (
+            <p>{error}</p>
+          )}
         </div>
       )}
       {success && (
@@ -76,34 +210,18 @@ const EditProfile = () => {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="max-w-md mx-auto space-y-6">
-        {/* Image Upload */}
+      {/* Update Names Form */}
+      <form
+        onSubmit={(e) => e.preventDefault()}
+        className="max-w-md mx-auto space-y-6 bg-[#1E1E1E] p-6 rounded-lg shadow-md"
+      >
+        <h3 className="text-xl font-semibold text-white mb-4">
+          Update Personal Information
+        </h3>
+        {/* First Name Input */}
         <div>
-          <label
-            htmlFor="profileImage"
-            className="block text-sm font-medium text-gray-400 mb-1"
-          >
-            <div className="flex items-center space-x-2 bg-[#2A2A2A] text-white border-gray-700 rounded-md shadow-sm p-2 cursor-pointer hover:bg-[#3A3A3A] transition-colors">
-              <FiCamera className="w-5 h-5" />
-              <span>
-                {formData.image ? formData.image.name : "Choose an Image"}
-              </span>
-            </div>
-          </label>
-          <input
-            type="file"
-            id="profileImage"
-            name="image"
-            accept="image/*"
-            onChange={handleFileChange}
-            className="hidden"
-          />
-        </div>
-
-        {/* Name Input */}
-        <div>
-          <label htmlFor="name" className="sr-only">
-            Name
+          <label htmlFor="firstName" className="sr-only">
+            First Name
           </label>
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -111,16 +229,55 @@ const EditProfile = () => {
             </div>
             <input
               type="text"
-              id="name"
-              name="name"
-              value={formData.name}
+              id="firstName"
+              name="firstName"
+              value={formData.firstName}
               onChange={handleInputChange}
-              placeholder="Name"
+              placeholder="First Name"
               className="pl-10 block w-full bg-[#2A2A2A] text-white border-gray-700 rounded-md shadow-sm p-2 focus:border-blue-500 focus:ring-blue-500"
             />
           </div>
         </div>
 
+        {/* Last Name Input */}
+        <div>
+          <label htmlFor="lastName" className="sr-only">
+            Last Name
+          </label>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <FiUser className="h-5 w-5 text-gray-400" />
+            </div>
+            <input
+              type="text"
+              id="lastName"
+              name="lastName"
+              value={formData.lastName}
+              onChange={handleInputChange}
+              placeholder="Last Name"
+              className="pl-10 block w-full bg-[#2A2A2A] text-white border-gray-700 rounded-md shadow-sm p-2 focus:border-blue-500 focus:ring-blue-500"
+            />
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={handleUpdateUserInfo}
+          className="w-full bg-purple-600 text-white py-3 px-4 rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={loading}
+        >
+          {loading ? "Updating Profile..." : "Update Profile Info"}
+        </button>
+      </form>
+
+      {/* Financial Goals Form */}
+      <form
+        onSubmit={(e) => e.preventDefault()}
+        className="max-w-md mx-auto space-y-6 bg-[#1E1E1E] p-6 rounded-lg shadow-md"
+      >
+        <h3 className="text-xl font-semibold text-white mb-4">
+          Set/Update Financial Goals
+        </h3>
         {/* Salary Input */}
         <div>
           <label htmlFor="salary" className="sr-only">
@@ -163,12 +320,62 @@ const EditProfile = () => {
           </div>
         </div>
 
+        <div className="flex justify-between gap-4">
+          <button
+            type="button"
+            onClick={handleSetFinancialGoal}
+            className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={loading}
+          >
+            {loading ? "Setting..." : "Set Financial Goals"}
+          </button>
+          <button
+            type="button"
+            onClick={handleUpdateFinancialGoal}
+            className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={loading}
+          >
+            {loading ? "Updating..." : "Update Financial Goals"}
+          </button>
+        </div>
+      </form>
+
+      {/* Update Photo Form */}
+      <form
+        onSubmit={(e) => e.preventDefault()}
+        className="max-w-md mx-auto space-y-6 bg-[#1E1E1E] p-6 rounded-lg shadow-md"
+      >
+        <h3 className="text-xl font-semibold text-white mb-4">
+          Update Profile Photo
+        </h3>
+        <div>
+          <label
+            htmlFor="profileImage"
+            className="block text-sm font-medium text-gray-400 mb-1"
+          >
+            <div className="flex items-center space-x-2 bg-[#2A2A2A] text-white border-gray-700 rounded-md shadow-sm p-2 cursor-pointer hover:bg-[#3A3A3A] transition-colors">
+              <FiCamera className="w-5 h-5" />
+              <span>
+                {formData.image ? formData.image.name : "Choose an Image"}
+              </span>
+            </div>
+          </label>
+          <input
+            type="file"
+            id="profileImage"
+            name="image"
+            accept="image/*"
+            onChange={handleFileChange}
+            className="hidden"
+          />
+        </div>
         <button
-          type="submit"
-          className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          type="button"
+          onClick={handleUpdatePhoto}
+          className="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           disabled={loading}
         >
-          {loading ? "Saving..." : "Save"}
+          {loading ? "Uploading Photo..." : "Update Photo"}
         </button>
       </form>
     </div>

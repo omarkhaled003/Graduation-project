@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import Navbar from "../../Components/Navbar";
-import UserInfo from "../../Components/UserInfo";
 import NotificationRing from "../../Components/NotificationRing";
 import Chatbot from "../../Components/Chatbot";
 import { FiMessageCircle } from "react-icons/fi";
+import UserInfo from "../../components/UserInfo";
 
 export default function MainLayout() {
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
@@ -13,9 +13,18 @@ export default function MainLayout() {
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
+    console.log(
+      "MainLayout useEffect: storedUser from localStorage",
+      storedUser
+    );
     if (storedUser) {
       try {
-        setUser(JSON.parse(storedUser));
+        const parsedUser = JSON.parse(storedUser);
+        setUser(parsedUser);
+        console.log(
+          "MainLayout useEffect: Parsed user set to state",
+          parsedUser
+        );
       } catch (e) {
         console.error("Failed to parse user from localStorage:", e);
         localStorage.removeItem("user");
@@ -23,7 +32,9 @@ export default function MainLayout() {
         navigate("/login");
       }
     } else {
-      // If no user in localStorage, redirect to login
+      console.log(
+        "MainLayout useEffect: No user found in localStorage, redirecting to login."
+      );
       navigate("/login");
     }
   }, [navigate]);
@@ -39,6 +50,7 @@ export default function MainLayout() {
         {/* Header Bar */}
         <header className="fixed top-0 right-0 left-64 z-40 flex justify-end items-center bg-[#121212] gap-6 p-4">
           <NotificationRing />
+          {console.log("MainLayout: User object passed to UserInfo", user)}
           <UserInfo user={user} />
         </header>
         <main className="flex-1 p-8 min-h-0 h-screen overflow-auto pt-16">

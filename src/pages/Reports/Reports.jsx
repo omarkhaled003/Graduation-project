@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   PieChart,
@@ -11,9 +11,18 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from "recharts";
+import api from "../../utils/api"; // Import the shared API instance
 
 const Reports = () => {
   const [activeChart, setActiveChart] = useState("donut");
+  const [financialGoals, setFinancialGoals] = useState({
+    salary: 0,
+    financialGoal: 0,
+  });
+  const [loadingGoals, setLoadingGoals] = useState(true);
+  const [goalsError, setGoalsError] = useState(null);
+
+  const navigate = useNavigate();
 
   // Revenue data
   const revenueData = [
@@ -44,6 +53,35 @@ const Reports = () => {
     { day: "06", food: 380, transport: 280, others: 190 },
     { day: "07", food: 420, transport: 320, others: 210 },
   ];
+
+  // Fetch financial goals
+  useEffect(() => {
+    const fetchFinancialGoals = async () => {
+      try {
+        setLoadingGoals(true);
+        const response = await api.get("/FinancialGoal/UserFinancialGoal");
+        if (response.data) {
+          setFinancialGoals({
+            salary: response.data.salary || 0,
+            financialGoal: response.data.financialGoal || 0,
+          });
+          console.log("Financial Goals fetched successfully:", response.data);
+        } else {
+          setFinancialGoals({ salary: 0, financialGoal: 0 });
+          console.log("No financial goals data received.");
+        }
+      } catch (error) {
+        console.error("Error fetching financial goals:", error);
+        setGoalsError("Failed to load financial goals.");
+      } finally {
+        setLoadingGoals(false);
+      }
+    };
+
+    fetchFinancialGoals();
+  }, []); // Empty dependency array means this runs once on mount
+
+  const spendingGoal = financialGoals.salary - financialGoals.financialGoal;
 
   const total = expenseData.reduce((sum, item) => sum + item.value, 0);
 
@@ -197,56 +235,92 @@ const Reports = () => {
               <h2 className="text-white text-xl font-semibold">
                 Spending Limit
               </h2>
-              <p className="text-gray-400 text-sm">Data from 1-7 Apr 2024</p>
-              <div className="mt-4">
-                <div className="flex justify-between mb-2">
-                  <span className="text-white font-medium">$252.55</span>
-                  <span className="text-gray-400">of $1,500</span>
-                </div>
-                <div className="h-2 bg-[#2A2A2A] rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-orange-500 to-orange-400"
-                    style={{ width: "35%" }}
-                  />
-                </div>
-              </div>
+              {loadingGoals ? (
+                <p className="text-gray-400 text-sm">Loading...</p>
+              ) : goalsError ? (
+                <p className="text-red-500 text-sm">{goalsError}</p>
+              ) : (
+                <>
+                  <p className="text-gray-400 text-sm">
+                    Your current salary is ${financialGoals.salary.toFixed(2)}
+                  </p>
+                  <div className="mt-4">
+                    <div className="flex justify-between mb-2">
+                      <span className="text-white font-medium">
+                        ${spendingGoal.toFixed(2)}
+                      </span>
+                      <span className="text-gray-400">
+                        of ${financialGoals.salary.toFixed(2)}
+                      </span>
+                    </div>
+                    <div className="h-2 bg-[#2A2A2A] rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-orange-500 to-orange-400"
+                        style={{
+                          width:
+                            `${
+                              (spendingGoal / financialGoals.salary) * 100
+                            }%` || "0%",
+                        }}
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Saving Goal Section */}
             <div className="bg-[#1E1E1E] rounded-xl p-4 md:p-6">
               <h2 className="text-white text-xl font-semibold">Saving Goal</h2>
-              <p className="text-gray-400 text-sm">Data from 1-7 Apr 2024</p>
-              <div className="flex justify-center mt-4">
-                <div className="relative w-32 h-32">
-                  <svg className="w-full h-full" viewBox="0 0 36 36">
-                    <path
-                      d="M18 2.0845
-                        a 15.9155 15.9155 0 0 1 0 31.831
-                        a 15.9155 15.9155 0 0 1 0 -31.831"
-                      fill="none"
-                      stroke="#2A2A2A"
-                      strokeWidth="3"
-                    />
-                    <path
-                      d="M18 2.0845
-                        a 15.9155 15.9155 0 0 1 0 31.831
-                        a 15.9155 15.9155 0 0 1 0 -31.831"
-                      fill="none"
-                      stroke="#4ADE80"
-                      strokeWidth="3"
-                      strokeDasharray="35, 100"
-                    />
-                  </svg>
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-white">
-                        $252.55
+              {loadingGoals ? (
+                <p className="text-gray-400 text-sm">Loading...</p>
+              ) : goalsError ? (
+                <p className="text-red-500 text-sm">{goalsError}</p>
+              ) : (
+                <>
+                  <p className="text-gray-400 text-sm">
+                    Your current saving goal is $
+                    {financialGoals.financialGoal.toFixed(2)}
+                  </p>
+                  <div className="flex justify-center mt-4">
+                    <div className="relative w-32 h-32">
+                      <svg className="w-full h-full" viewBox="0 0 36 36">
+                        <path
+                          d="M18 2.0845
+                            a 15.9155 15.9155 0 0 1 0 31.831
+                            a 15.9155 15.9155 0 0 1 0 -31.831"
+                          fill="none"
+                          stroke="#2A2A2A"
+                          strokeWidth="3"
+                        />
+                        <path
+                          d="M18 2.0845
+                            a 15.9155 15.9155 0 0 1 0 31.831
+                            a 15.9155 15.9155 0 0 1 0 -31.831"
+                          fill="none"
+                          stroke="#4ADE80"
+                          strokeWidth="3"
+                          strokeDasharray={`${
+                            (financialGoals.financialGoal /
+                              financialGoals.salary) *
+                            100
+                          }, 100`}
+                        />
+                      </svg>
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-white">
+                            ${financialGoals.financialGoal.toFixed(2)}
+                          </div>
+                          <div className="text-sm text-gray-400">
+                            of ${financialGoals.salary.toFixed(2)}
+                          </div>
+                        </div>
                       </div>
-                      <div className="text-sm text-gray-400">of $1,200</div>
                     </div>
                   </div>
-                </div>
-              </div>
+                </>
+              )}
             </div>
           </div>
         </div>

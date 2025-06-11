@@ -2,6 +2,21 @@ import React, { useState } from "react";
 import { FiCalendar, FiUploadCloud } from "react-icons/fi";
 import axios from "axios";
 
+const categories = ["Clothes", "Electronics", "Food & Groceries", "Other"];
+
+const monthlyBillCategories = [
+  "Rent",
+  "Utilities",
+  "Internet",
+  "Phone Bill",
+  "Subscription",
+  "Loan Payment",
+  "Insurance",
+  "Other Bills",
+];
+
+export { categories, monthlyBillCategories };
+
 const History = () => {
   const [formData, setFormData] = useState({
     itemName: "",
@@ -293,19 +308,6 @@ const History = () => {
       setLoading(false);
     }
   };
-
-  const categories = ["Clothes", "Electronics", "Food & Groceries", "Other"];
-
-  const monthlyBillCategories = [
-    "Rent",
-    "Utilities",
-    "Internet",
-    "Phone Bill",
-    "Subscription",
-    "Loan Payment",
-    "Insurance",
-    "Other Bills",
-  ];
 
   return (
     <>
