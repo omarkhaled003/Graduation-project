@@ -12,7 +12,8 @@ const UserInfo = ({ user }) => {
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [profilePhotoUrl, setProfilePhotoUrl] = useState(null); // New state for photo URL
-  const [isImageModalOpen, setIsImageModalOpen] = useState(false); // New state for image modal
+  const [userName, setUserName] = useState(null); // New state for user's name
+  const [isImageModalOpen, setIsImageModalToOpen] = useState(false); // New state for image modal
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
 
@@ -28,7 +29,7 @@ const UserInfo = ({ user }) => {
   };
 
   const toggleImageModal = () => {
-    setIsImageModalOpen(!isImageModalOpen);
+    setIsImageModalToOpen(!isImageModalToOpen);
   };
 
   // Close dropdown when clicking outside
@@ -44,7 +45,7 @@ const UserInfo = ({ user }) => {
     };
   }, []);
 
-  // Fetch profile photo
+  // Fetch profile photo and user info
   useEffect(() => {
     const fetchProfilePhoto = async () => {
       if (user && user.token) {
@@ -66,14 +67,32 @@ const UserInfo = ({ user }) => {
       }
     };
 
+    const fetchUserName = async () => {
+      if (user && user.token) {
+        try {
+          const response = await api.get("/User/UserInformation");
+          if (response.data) {
+            const { firstName, lastName } = response.data;
+            setUserName(`${firstName || ""} ${lastName || ""}`.trim());
+          }
+        } catch (error) {
+          console.error("Error fetching user name:", error);
+          setUserName(user?.email || "User"); // Fallback to email or "User"
+        }
+      } else {
+        setUserName(null); // Clear name if user is not logged in
+      }
+    };
+
     fetchProfilePhoto();
+    fetchUserName(); // Call the new function
 
     return () => {
       if (profilePhotoUrl) {
         URL.revokeObjectURL(profilePhotoUrl);
       }
     };
-  }, [user]);
+  }, [user]); // Removed profilePhotoUrl from dependencies to avoid infinite loop
 
   return (
     <div className="relative" ref={dropdownRef}>
@@ -91,13 +110,17 @@ const UserInfo = ({ user }) => {
               alt="Profile"
               className="w-full h-full object-cover"
             />
+          ) : userName ? (
+            userName.charAt(0).toUpperCase()
           ) : user?.email ? (
             user.email.charAt(0).toUpperCase()
           ) : (
             "U"
           )}
         </div>
-        <span className="hidden sm:inline">{user?.email || "User"}</span>
+        <span className="hidden sm:inline">
+          {userName || user?.email || "User"}
+        </span>
       </button>
 
       {dropdownOpen && (
@@ -139,9 +162,17 @@ const UserInfo = ({ user }) => {
                 alt="Profile Large"
                 className="max-w-full max-h-[80vh] object-contain"
               />
+            ) : userName ? (
+              <div className="flex items-center justify-center text-white text-9xl">
+                {userName.charAt(0).toUpperCase()}
+              </div>
+            ) : user?.email ? (
+              <div className="flex items-center justify-center text-white text-9xl">
+                {user.email.charAt(0).toUpperCase()}
+              </div>
             ) : (
               <div className="flex items-center justify-center text-white text-9xl">
-                {user?.email ? user.email.charAt(0).toUpperCase() : "U"}
+                {"U"}
               </div>
             )}
           </div>

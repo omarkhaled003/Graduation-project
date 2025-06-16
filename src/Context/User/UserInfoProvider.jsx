@@ -35,21 +35,21 @@ export default function UserInfoProvider({ children }) {
     }
   }, []);
 
-  useEffect(() => {
-    // Sync with localStorage changes
-    const handleStorage = () => {
-      const user = localStorage.getItem("user");
-      if (user) {
-        setUserData(JSON.parse(user));
-        setIsLogin(true);
-      } else {
-        setUserData(null);
-        setIsLogin(false);
-      }
-    };
-    window.addEventListener("storage", handleStorage);
-    return () => window.removeEventListener("storage", handleStorage);
-  }, []);
+  // Sync with localStorage changes
+  // useEffect(() => {
+  //   const handleStorage = () => {
+  //     const user = localStorage.getItem("user");
+  //     if (user) {
+  //       setUserData(JSON.parse(user));
+  //       setIsLogin(true);
+  //     } else {
+  //       setUserData(null);
+  //       setIsLogin(false);
+  //     }
+  //   };
+  //   window.addEventListener("storage", handleStorage);
+  //   return () => window.removeEventListener("storage", handleStorage);
+  // }, []);
 
   useEffect(() => {
     console.log("[Provider] isLogin:", isLogin);

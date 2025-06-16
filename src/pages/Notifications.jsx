@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { FiArrowLeft } from "react-icons/fi";
+import { FiArrowLeft, FiAlertCircle, FiInfo } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
@@ -124,33 +124,56 @@ const Notifications = () => {
         <div className="space-y-4">
           {alerts.map((alert) => {
             console.log("Rendering alert:", alert);
+            const alertDate = new Date(alert.date);
+            const isValidDate = !isNaN(alertDate.getTime());
+
+            const displayDate = isValidDate
+              ? `${alertDate.toLocaleDateString()} ${alertDate.toLocaleTimeString()}`
+              : "Date Unavailable";
+
+            let iconComponent = <FiInfo className="text-blue-400 text-2xl" />;
+            let borderColorClass = "border-blue-500"; // Default info color
+
+            // Assuming 'type' field in alert object indicates the type of alert
+            if (alert.type === 100) {
+              // Example: spending limit alert
+              iconComponent = (
+                <FiAlertCircle className="text-red-500 text-2xl" />
+              );
+              borderColorClass = "border-red-500";
+            }
+
             return (
               <div
                 key={alert.id}
-                className="bg-[#1E1E1E] rounded-xl p-4 shadow-md hover:bg-[#2A2A2A] transition-colors" // Corrected colors
+                className={`flex items-start bg-[#1E1E1E] rounded-xl p-4 shadow-md hover:bg-[#2A2A2A] transition-colors border-l-4 ${borderColorClass}`}
               >
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="text-lg font-semibold mb-2">
-                      {alert.title}
-                    </h3>
-                    <p className="text-gray-400">{alert.message}</p>
+                <div className="flex-shrink-0 mr-4 mt-1">{iconComponent}</div>
+                <div className="flex-grow">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h3 className="text-lg font-semibold mb-1 text-white">
+                        {alert.title}
+                      </h3>
+                      <p className="text-gray-300 text-sm">{alert.message}</p>
+                    </div>
+                    <span className="text-xs text-gray-500 flex-shrink-0 ml-4">
+                      {displayDate}
+                    </span>
                   </div>
-                  <span className="text-sm text-gray-500">
-                    {new Date(alert.dateCreated).toLocaleDateString()}
-                  </span>
+                  {alert.productId && (
+                    <button
+                      onClick={() => {
+                        console.log("Navigating to product:", alert.productId);
+                        navigate(`/product-details/${alert.productId}`);
+                      }}
+                      className="mt-3 text-blue-400 hover:text-blue-300 text-sm inline-flex items-center"
+                    >
+                      View Product Details
+                      <FiArrowLeft className="ml-1 rotate-180" />
+                    </button>
+                  )}
                 </div>
-                {alert.productId && (
-                  <button
-                    onClick={() => {
-                      console.log("Navigating to product:", alert.productId);
-                      navigate(`/product-details/${alert.productId}`);
-                    }}
-                    className="mt-3 text-blue-400 hover:text-blue-300 text-sm"
-                  >
-                    View Product Details
-                  </button>
-                )}
               </div>
             );
           })}

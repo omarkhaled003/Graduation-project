@@ -22,6 +22,13 @@ const Dashboard = () => {
   const [searchType, setSearchType] = useState("");
   const [editingProductId, setEditingProductId] = useState(null);
   const [editFormData, setEditFormData] = useState({});
+  const [totalExpenses, setTotalExpenses] = useState("EGP 0.000");
+  const [revenueSalary, setRevenueSalary] = useState("EGP 0.000");
+  const [lastMonthBillCategories, setLastMonthBillCategories] = useState([]);
+  const [financialGoals, setFinancialGoals] = useState({
+    salary: 0,
+    financialGoal: 0,
+  });
 
   const applyFiltersToProducts = (products) => {
     return products.filter((product) => {
@@ -80,9 +87,15 @@ const Dashboard = () => {
       const response = await api.get("/PurchasedProduct/GetPurchasedProducts");
       let productsToFilter = response.data;
 
-      if (isInitialLoad) {
-        productsToFilter = productsToFilter.slice(-10);
-      }
+      // Sort products by date in descending order (latest first)
+      productsToFilter.sort((a, b) => {
+        const dateA = new Date(a.date);
+        const dateB = new Date(b.date);
+        return dateB - dateA; // Descending order
+      });
+
+      // Take only the latest 10 products
+      productsToFilter = productsToFilter.slice(0, 10);
 
       setPurchasedProducts(productsToFilter);
 
@@ -95,8 +108,73 @@ const Dashboard = () => {
     }
   };
 
+  const fetchTotalExpenses = async () => {
+    if (!user || !user.token) {
+      setTotalExpenses("EGP 0.000");
+      return;
+    }
+    try {
+      console.log("Fetching total expenses in Dashboard...");
+      console.log("User in fetchTotalExpenses (Dashboard):", user);
+      const response = await api.get("/Expenses/GetTotalExpenses");
+      console.log("Total Expenses API Response (Dashboard):", response.data);
+      if (response.data && typeof response.data.totalExpenses === "number") {
+        setTotalExpenses(
+          `EGP ${response.data.totalExpenses.toLocaleString("en-US")}`
+        );
+      } else {
+        setTotalExpenses("EGP 0.000");
+      }
+    } catch (e) {
+      console.error("Error fetching total expenses:", e);
+      setTotalExpenses("EGP 0.000");
+    }
+  };
+
+  const fetchRevenueSalary = async () => {
+    if (!user || !user.token) {
+      setRevenueSalary("EGP 0.000");
+      return;
+    }
+    try {
+      const response = await api.get("/FinancialGoal/UserFinancialGoal");
+      if (response.data && typeof response.data.salary === "number") {
+        setRevenueSalary(`EGP ${response.data.salary.toLocaleString("en-US")}`);
+      } else {
+        setRevenueSalary("EGP 0.000");
+      }
+    } catch (e) {
+      console.error("Error fetching revenue salary:", e);
+      setRevenueSalary("EGP 0.000");
+    }
+  };
+
+  const fetchFinancialGoals = async () => {
+    if (!user || !user.token) {
+      setFinancialGoals({ salary: 0, financialGoal: 0 });
+      return;
+    }
+    try {
+      const response = await api.get("/FinancialGoal/UserFinancialGoal");
+      if (response.data) {
+        setFinancialGoals({
+          salary: response.data.salary || 0,
+          financialGoal: response.data.financialGoal || 0,
+        });
+      } else {
+        setFinancialGoals({ salary: 0, financialGoal: 0 });
+      }
+    } catch (e) {
+      console.error("Error fetching financial goals:", e);
+      setFinancialGoals({ salary: 0, financialGoal: 0 });
+    }
+  };
+
   useEffect(() => {
     fetchPurchasedProducts(true);
+    fetchTotalExpenses();
+    fetchRevenueSalary();
+    fetchFinancialGoals();
   }, [user]);
 
   const handleSearch = () => {
@@ -152,10 +230,30 @@ const Dashboard = () => {
     setEditFormData({ ...editFormData, [name]: value });
   };
 
-  const revenue = "EGP 20.000";
-  const expenses = "EGP 10.000";
-  const moneyLeft = "EGP 10.000";
+  const formattedSalary = user?.salary
+    ? `EGP ${user.salary.toLocaleString("en-US")}`
+    : "EGP 0.000";
   const totalPoints = "1500";
+
+  const numericTotalExpenses = parseFloat(
+    totalExpenses.replace("EGP ", "").replace(/,/g, "")
+  );
+  const spendingGoal = financialGoals.salary - financialGoals.financialGoal;
+  const overBudget = Math.max(0, numericTotalExpenses - spendingGoal);
+  const savingGoal = financialGoals.financialGoal;
+
+  // Calculate the saving goal display percentage
+  let savingGoalDisplayPercentage = 0;
+  if (overBudget === 0) {
+    savingGoalDisplayPercentage = 100;
+  } else if (savingGoal > 0) {
+    savingGoalDisplayPercentage =
+      ((savingGoal - overBudget) / savingGoal) * 100;
+  }
+  savingGoalDisplayPercentage = Math.max(0, savingGoalDisplayPercentage); // Ensure it doesn't go below 0
+
+  const expensesPercentage =
+    spendingGoal > 0 ? (numericTotalExpenses / spendingGoal) * 100 : 0;
 
   const expenseCategories = [
     { name: "Search Engine", value: 2234, color: "#38BDF8" },
@@ -168,6 +266,42 @@ const Dashboard = () => {
     (sum, item) => sum + item.value,
     0
   );
+
+  const monthlyBillCategoryColors = useState({
+    Rent: "#FF6347", // Tomato
+    Utilities: "#4682B4", // SteelBlue
+    "Loan Payment": "#DAA520", // Goldenrod
+    Insurance: "#6A5ACD", // SlateBlue
+    "Other Bills": "#D2691E", // Chocolate
+  })[0];
+
+  // New useEffect to fetch last month's bills with categories
+  useEffect(() => {
+    const fetchLastMonthBills = async () => {
+      if (!user || !user.token) return;
+      try {
+        const response = await api.get(
+          "/MonthlyBill/GetLastMonthBillsWithCategories"
+        );
+        if (response.data && response.data.categories) {
+          const transformedData = Object.keys(response.data.categories).map(
+            (category) => ({
+              name: category,
+              value: response.data.categories[category],
+              color: monthlyBillCategoryColors[category] || "#CCCCCC", // Use defined color or a default
+            })
+          );
+          setLastMonthBillCategories(transformedData);
+        } else {
+          setLastMonthBillCategories([]);
+        }
+      } catch (error) {
+        console.error("Error fetching last month's bills:", error);
+        setLastMonthBillCategories([]);
+      }
+    };
+    fetchLastMonthBills();
+  }, [user, monthlyBillCategoryColors]);
 
   const latestOrders = [
     {
@@ -249,17 +383,39 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
         <div className="bg-[#1E1E1E] rounded-xl p-4 md:p-6">
           <h3 className="text-gray-400 text-sm">Revenue</h3>
-          <div className="text-2xl font-bold text-white mt-2">{revenue}</div>
+          <div className="text-2xl font-bold text-white mt-2">
+            {revenueSalary}
+          </div>
         </div>
         <div className="bg-[#1E1E1E] rounded-xl p-4 md:p-6">
           <h3 className="text-gray-400 text-sm">Expenses</h3>
-          <div className="text-2xl font-bold text-white mt-2">{expenses}</div>
-          <div className="text-blue-400 text-xs mt-2">150%</div>
+          <div className="text-2xl font-bold text-white mt-2">
+            {totalExpenses}
+          </div>
         </div>
         <div className="bg-[#1E1E1E] rounded-xl p-4 md:p-6">
-          <h3 className="text-gray-400 text-sm">Money Left</h3>
-          <div className="text-2xl font-bold text-white mt-2">{moneyLeft}</div>
-          <div className="text-blue-400 text-xs mt-2">50%</div>
+          <h3 className="text-gray-400 text-sm">Budget Insights</h3>
+          <div className="flex justify-between gap-4 mt-4">
+            {/* Expenses Half */}
+            <div className="flex-1 p-2 rounded-md bg-[#2A2A2A] text-center">
+              <p className="text-gray-400 text-sm">Expenses</p>
+              <div
+                className={`${
+                  expensesPercentage > 100 ? "text-red-500" : "text-blue-400"
+                } text-xl font-bold mt-1`}
+              >
+                {expensesPercentage.toFixed(2)}%
+              </div>
+            </div>
+
+            {/* Saving Goal Half */}
+            <div className="flex-1 p-2 rounded-md bg-[#2A2A2A] text-center">
+              <p className="text-gray-400 text-sm">Saving Goal</p>
+              <div className="text-blue-400 text-xl font-bold mt-1">
+                {savingGoalDisplayPercentage.toFixed(2)}%
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -271,13 +427,18 @@ const Dashboard = () => {
             <h2 className="text-white text-xl font-semibold">
               Expenses Breakdown
             </h2>
-            <div className="text-white text-2xl font-bold">{totalExpense}</div>
+            <div className="text-white text-2xl font-bold">
+              {lastMonthBillCategories.reduce(
+                (sum, item) => sum + item.value,
+                0
+              )}
+            </div>
           </div>
           <div className="h-[250px] flex flex-col items-center">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
-                  data={expenseCategories}
+                  data={lastMonthBillCategories}
                   cx="50%"
                   cy="50%"
                   innerRadius={60}
@@ -285,7 +446,7 @@ const Dashboard = () => {
                   paddingAngle={5}
                   dataKey="value"
                 >
-                  {expenseCategories.map((entry, index) => (
+                  {lastMonthBillCategories.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
@@ -298,12 +459,15 @@ const Dashboard = () => {
                   fill="white"
                   fontSize="24"
                 >
-                  {totalExpense}
+                  {lastMonthBillCategories.reduce(
+                    (sum, item) => sum + item.value,
+                    0
+                  )}
                 </text>
               </PieChart>
             </ResponsiveContainer>
             <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 mt-4 text-sm">
-              {expenseCategories.map((category, index) => (
+              {lastMonthBillCategories.map((category, index) => (
                 <div
                   key={index}
                   className="flex items-center gap-2 text-gray-400"

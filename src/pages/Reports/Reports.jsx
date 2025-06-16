@@ -21,39 +21,37 @@ const Reports = () => {
   });
   const [loadingGoals, setLoadingGoals] = useState(true);
   const [goalsError, setGoalsError] = useState(null);
+  const [totalExpenses, setTotalExpenses] = useState(0); // New state for total expenses
+  const [isTooltipVisible, setIsTooltipVisible] = useState(false);
+  const [tooltipContent, setTooltipContent] = useState("");
+  const [revenueData, setRevenueData] = useState([]); // New state for revenue data
+  const [monthlyCategoriesData, setMonthlyCategoriesData] = useState([]); // New state for weekly expense categories
+  const [pieChartData, setPieChartData] = useState([]); // New state for PieChart data
+  const [dailyProductCategoriesData, setDailyProductCategoriesData] = useState(
+    []
+  ); // New state for daily product categories
+  const [categoryColorsMap] = useState({
+    Bills: "#8884d8", // Example color for bills
+    "Food & Groceries": "#4ADE80",
+    Shopping: "#FB7185",
+    Transportation: "#FB923C",
+    Others: "#38BDF8",
+    Other: "#FF7F50", // Added color for 'Other' category
+    Clothes: "#8A2BE2", // Added color for Clothes
+    Electronics: "#00CED1", // Added color for Electronics
+    phone: "#FFC658",
+    Internet: "#A1E0E0",
+    Mobile: "#D8BFD8",
+    Utilities: "#F08080",
+    string: "#ADD8E6", // Assuming 'string' is a placeholder or generic category
+    Insurance: "#DA70D6",
+    // Add more colors for other potential categories if needed
+  });
 
   const navigate = useNavigate();
 
-  // Revenue data
-  const revenueData = [
-    { day: "01", income: 200, expense: 150 },
-    { day: "02", income: 300, expense: 200 },
-    { day: "03", income: 200, expense: 180 },
-    { day: "04", income: 280, expense: 220 },
-    { day: "05", income: 250, expense: 200 },
-    { day: "06", income: 300, expense: 250 },
-    { day: "07", income: 350, expense: 300 },
-  ];
-
-  // Weekly expense data
-  const expenseData = [
-    { category: "Food & Drink", value: 758.2, color: "#4ADE80" },
-    { category: "Shopping", value: 700, color: "#FB7185" },
-    { category: "Transportation", value: 758.2, color: "#FB923C" },
-    { category: "Others", value: 758.2, color: "#38BDF8" },
-  ];
-
+  // Weekly expense data (now handled by monthlyCategoriesData)
   // Daily expense data
-  const dailyExpenseData = [
-    { day: "01", food: 300, transport: 200, others: 150 },
-    { day: "02", food: 400, transport: 300, others: 200 },
-    { day: "03", food: 350, transport: 250, others: 180 },
-    { day: "04", food: 450, transport: 350, others: 220 },
-    { day: "05", food: 300, transport: 200, others: 170 },
-    { day: "06", food: 380, transport: 280, others: 190 },
-    { day: "07", food: 420, transport: 320, others: 210 },
-  ];
-
   // Fetch financial goals
   useEffect(() => {
     const fetchFinancialGoals = async () => {
@@ -81,17 +79,171 @@ const Reports = () => {
     fetchFinancialGoals();
   }, []); // Empty dependency array means this runs once on mount
 
+  // New useEffect to fetch total expenses
+  useEffect(() => {
+    const fetchTotalExpenses = async () => {
+      try {
+        console.log("Fetching total expenses...");
+        const response = await api.get("/Expenses/GetTotalExpenses");
+        console.log("Total Expenses API Response:", response.data);
+        if (response.data && typeof response.data.totalExpenses === "number") {
+          setTotalExpenses(response.data.totalExpenses); // Access totalExpenses property
+          console.log("Total expenses set to:", response.data.totalExpenses);
+        } else {
+          setTotalExpenses(0); // Fallback
+          console.log("Total expenses set to 0 due to invalid data.");
+        }
+      } catch (error) {
+        console.error("Error fetching total expenses:", error);
+        setTotalExpenses(0); // Set to default on error
+        console.log("Total expenses set to 0 due to API error.");
+      }
+    };
+    fetchTotalExpenses();
+  }, []); // Revert to empty dependency array
+
+  // New useEffect to fetch and process revenue data
+  useEffect(() => {
+    const fetchMonthlyExpenses = async () => {
+      try {
+        const response = await api.get("/Expenses/lastSevenMonthes");
+        if (response.data && Array.isArray(response.data)) {
+          const processedData = response.data.map((item) => {
+            const monthDate = new Date(item.month + "-01"); // Add -01 for valid date parsing
+            const monthLabel = monthDate.toLocaleString("en-US", {
+              month: "short",
+            });
+            const expenseValue = item.total || 0;
+            const incomeValue = financialGoals.salary - expenseValue;
+
+            return {
+              day: monthLabel, // Using 'day' to match existing XAxis dataKey
+              expense: expenseValue,
+              income: Math.max(0, incomeValue), // Ensure income is not negative
+            };
+          });
+          // Reverse the order to display from oldest to newest month on the chart
+          setRevenueData(processedData.reverse());
+        } else {
+          setRevenueData([]);
+        }
+      } catch (error) {
+        console.error("Error fetching monthly expenses:", error);
+        setRevenueData([]);
+      }
+    };
+
+    // Only fetch if financialGoals.salary is available, as income depends on it
+    if (financialGoals.salary !== 0) {
+      fetchMonthlyExpenses();
+    }
+  }, [financialGoals.salary]); // Dependency on financialGoals.salary
+
+  // New useEffect to fetch and process monthly expenses with categories
+  useEffect(() => {
+    const fetchMonthlyExpensesWithCategories = async () => {
+      try {
+        const response = await api.get(
+          "/Expenses/lastSevenMonthsWithCategories"
+        );
+        if (response.data && Array.isArray(response.data)) {
+          const processedData = response.data.map((item) => {
+            const monthDate = new Date(item.month + "-01");
+            const monthLabel = monthDate.toLocaleString("en-US", {
+              month: "short",
+            });
+
+            const monthlyData = { day: monthLabel };
+
+            // Process billsCategory
+            const totalBills = Object.values(item.billsCategory || {}).reduce(
+              (sum, value) => sum + value,
+              0
+            );
+            monthlyData.Bills = totalBills;
+
+            // Process productsCategory
+            for (const category in item.productsCategory) {
+              monthlyData[category] = item.productsCategory[category];
+            }
+
+            return monthlyData;
+          });
+          setMonthlyCategoriesData(processedData.reverse());
+        } else {
+          setMonthlyCategoriesData([]);
+        }
+      } catch (error) {
+        console.error(
+          "Error fetching monthly expenses with categories:",
+          error
+        );
+        setMonthlyCategoriesData([]);
+      }
+    };
+    fetchMonthlyExpensesWithCategories();
+  }, []); // Empty dependency array as it fetches data independently
+
+  // New useEffect to fetch and process daily expenses with product categories for donut chart
+  useEffect(() => {
+    const fetchDailyProductCategories = async () => {
+      try {
+        const response = await api.get("/Expenses/lastSevenDaysWithCategories");
+        if (response.data && Array.isArray(response.data)) {
+          const aggregatedProductCategories = {};
+          response.data.forEach((dayData) => {
+            for (const category in dayData.productsCategory) {
+              aggregatedProductCategories[category] =
+                (aggregatedProductCategories[category] || 0) +
+                dayData.productsCategory[category];
+            }
+          });
+
+          const transformedData = Object.keys(aggregatedProductCategories).map(
+            (category) => ({
+              category: category,
+              value: aggregatedProductCategories[category],
+              color: categoryColorsMap[category] || "#CCCCCC",
+            })
+          );
+          setDailyProductCategoriesData(transformedData);
+        } else {
+          setDailyProductCategoriesData([]);
+        }
+      } catch (error) {
+        console.error("Error fetching daily product categories:", error);
+        setDailyProductCategoriesData([]);
+      }
+    };
+    fetchDailyProductCategories();
+  }, []); // Empty dependency array to run once on mount
+
+  // Calculate data for PieChart
+  useEffect(() => {
+    if (dailyProductCategoriesData.length > 0) {
+      // Use dailyProductCategoriesData directly for the PieChart
+      setPieChartData(dailyProductCategoriesData);
+    } else {
+      setPieChartData([]);
+    }
+  }, [dailyProductCategoriesData, categoryColorsMap]); // Dependency on dailyProductCategoriesData
+
   const spendingGoal = financialGoals.salary - financialGoals.financialGoal;
+  const overBudget = Math.max(0, totalExpenses - spendingGoal); // Calculate overBudget
 
-  const total = expenseData.reduce((sum, item) => sum + item.value, 0);
+  const total = pieChartData.reduce((sum, item) => sum + item.value, 0); // Recalculate total for PieChart
 
-  const CustomTooltip = ({ active, payload }) => {
+  const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-[#2A2A2A] p-2 rounded-lg border border-gray-600">
+          {label && <p className="text-gray-300 mb-1">{label}</p>}
           {payload.map((entry, index) => (
             <div key={index} className="text-sm text-white">
-              <span className="capitalize">{entry.name}</span>: ${entry.value}
+              <span style={{ color: entry.color }}>
+                {entry.name || entry.category}
+              </span>
+              : ${entry.value.toFixed(2)}
             </div>
           ))}
         </div>
@@ -107,8 +259,7 @@ const Reports = () => {
         <div className="bg-[#1E1E1E] rounded-xl p-4 md:p-6">
           <div>
             <h2 className="text-white text-xl font-semibold">Revenue</h2>
-            <p className="text-gray-400 text-sm">Data from 1-7 Apr 2024</p>
-            <div className="text-2xl font-bold text-white mt-2">$1,275.30</div>
+            <p className="text-gray-400 text-sm">Data from last 7 months</p>
           </div>
           <div className="h-[200px] mt-4">
             <ResponsiveContainer width="100%" height="100%">
@@ -116,8 +267,8 @@ const Reports = () => {
                 <XAxis dataKey="day" stroke="#6B7280" />
                 <YAxis stroke="#6B7280" />
                 <Tooltip content={<CustomTooltip />} />
-                <Bar dataKey="income" fill="#4ADE80" radius={[4, 4, 0, 0]} />
                 <Bar dataKey="expense" fill="#FB7185" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="income" fill="#4ADE80" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -140,9 +291,13 @@ const Reports = () => {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
               <div>
                 <h2 className="text-white text-xl font-semibold">
-                  Weekly Expense
+                  {activeChart === "bar" ? "Monthly Expense" : "Weekly Expense"}
                 </h2>
-                <p className="text-gray-400 text-sm">from 17 Apr 2024</p>
+                <p className="text-gray-400 text-sm">
+                  {activeChart === "donut"
+                    ? "Data from last 7 days"
+                    : "Data from last 7 months"}
+                </p>
               </div>
               <div className="bg-[#2A2A2A] rounded-full p-1 flex space-x-1">
                 <button
@@ -173,7 +328,7 @@ const Reports = () => {
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
-                      data={expenseData}
+                      data={pieChartData}
                       cx="50%"
                       cy="50%"
                       innerRadius={60}
@@ -181,7 +336,7 @@ const Reports = () => {
                       paddingAngle={5}
                       dataKey="value"
                     >
-                      {expenseData.map((entry, index) => (
+                      {pieChartData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
@@ -200,31 +355,61 @@ const Reports = () => {
                 </ResponsiveContainer>
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={dailyExpenseData}>
+                  <BarChart data={monthlyCategoriesData}>
                     <XAxis dataKey="day" stroke="#6B7280" />
                     <YAxis stroke="#6B7280" />
                     <Tooltip content={<CustomTooltip />} />
-                    <Bar dataKey="food" stackId="a" fill="#4ADE80" />
-                    <Bar dataKey="transport" stackId="a" fill="#FB923C" />
-                    <Bar dataKey="others" stackId="a" fill="#38BDF8" />
+                    {Object.keys(monthlyCategoriesData[0] || {}).map((key) => {
+                      if (key !== "day") {
+                        return (
+                          <Bar
+                            key={key}
+                            dataKey={key}
+                            stackId="a"
+                            fill={categoryColorsMap[key] || "#CCCCCC"} // Use defined colors or a default
+                          />
+                        );
+                      }
+                      return null;
+                    })}
                   </BarChart>
                 </ResponsiveContainer>
               )}
             </div>
 
             <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {expenseData.map((item, index) => (
-                <div key={index} className="flex items-center space-x-2">
-                  <div
-                    className="w-3 h-3 rounded-full"
-                    style={{ backgroundColor: item.color }}
-                  />
-                  <span className="text-gray-400">{item.category}</span>
-                  <span className="text-white font-medium">
-                    ${item.value.toFixed(2)}
-                  </span>
-                </div>
-              ))}
+              {Object.keys(categoryColorsMap).map((category, index) => {
+                const categoriesToRemove = [
+                  "Shopping",
+                  "Others",
+                  "Transportation",
+                  "phone",
+                  "Internet",
+                  "Mobile",
+                  "Utilities",
+                  "string",
+                  "Insurance",
+                ];
+
+                if (activeChart === "donut" && category === "Bills") {
+                  return null; // Do not render 'Bills' when donut chart is active
+                }
+
+                if (categoriesToRemove.includes(category)) {
+                  return null; // Don't render these categories
+                }
+                return (
+                  <div key={index} className="flex items-center space-x-2">
+                    <div
+                      className="w-3 h-3 rounded-full"
+                      style={{ backgroundColor: categoryColorsMap[category] }}
+                    />
+                    <span className="text-gray-400">{category}</span>
+                    {/* Display total for the category if needed, or remove this part */}
+                    {/* <span className="text-white font-medium">${item.value.toFixed(2)}</span> */}
+                  </div>
+                );
+              })}
             </div>
           </div>
 
@@ -232,45 +417,75 @@ const Reports = () => {
           <div className="space-y-6">
             {/* Spending Limit Section */}
             <div className="bg-[#1E1E1E] rounded-xl p-4 md:p-6">
-              <h2 className="text-white text-xl font-semibold">
+              <h2 className="text-white text-xl font-semibold mb-2">
                 Spending Limit
               </h2>
-              {loadingGoals ? (
-                <p className="text-gray-400 text-sm">Loading...</p>
-              ) : goalsError ? (
-                <p className="text-red-500 text-sm">{goalsError}</p>
-              ) : (
-                <>
-                  <p className="text-gray-400 text-sm">
-                    Your current salary is ${financialGoals.salary.toFixed(2)}
-                  </p>
-                  <div className="mt-4">
-                    <div className="flex justify-between mb-2">
-                      <span className="text-white font-medium">
-                        ${spendingGoal.toFixed(2)}
-                      </span>
-                      <span className="text-gray-400">
-                        of ${financialGoals.salary.toFixed(2)}
-                      </span>
-                    </div>
-                    <div className="h-2 bg-[#2A2A2A] rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-gradient-to-r from-orange-500 to-orange-400"
-                        style={{
-                          width:
-                            `${
-                              (spendingGoal / financialGoals.salary) * 100
-                            }%` || "0%",
-                        }}
-                      />
-                    </div>
-                  </div>
-                </>
-              )}
+              <p className="text-gray-400 text-sm mb-4">
+                Your current salary is $
+                {financialGoals.salary.toLocaleString("en-US", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
+              </p>
+              <div className="flex justify-between items-end mb-2">
+                <span className="text-2xl font-bold text-white">
+                  $
+                  {totalExpenses.toLocaleString("en-US", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
+                </span>
+                <span className="text-gray-400">
+                  of $
+                  {(
+                    financialGoals.salary - financialGoals.financialGoal
+                  ).toLocaleString("en-US", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
+                </span>
+              </div>
+              <div className="w-full bg-gray-700 rounded-full h-2.5">
+                <div
+                  className={`${
+                    totalExpenses >
+                    financialGoals.salary - financialGoals.financialGoal
+                      ? "bg-red-500"
+                      : "bg-green-500"
+                  } h-2.5 rounded-full`}
+                  style={{
+                    width: `${Math.min(
+                      100,
+                      (totalExpenses /
+                        (financialGoals.salary -
+                          financialGoals.financialGoal)) *
+                        100
+                    )}%`,
+                  }}
+                ></div>
+              </div>
             </div>
 
             {/* Saving Goal Section */}
-            <div className="bg-[#1E1E1E] rounded-xl p-4 md:p-6">
+            <div
+              className="bg-[#1E1E1E] rounded-xl p-4 md:p-6 relative"
+              onMouseEnter={() => {
+                const spendingLimitActual =
+                  financialGoals.salary - financialGoals.financialGoal;
+                const amountExceeded = totalExpenses - spendingLimitActual;
+                let content = `Current Saving Goal: $${financialGoals.financialGoal.toFixed(
+                  2
+                )}`;
+                if (amountExceeded > 0) {
+                  content += `<br/>Over Budget By: $${amountExceeded.toFixed(
+                    2
+                  )}`;
+                }
+                setTooltipContent(content);
+                setIsTooltipVisible(true);
+              }}
+              onMouseLeave={() => setIsTooltipVisible(false)}
+            >
               <h2 className="text-white text-xl font-semibold">Saving Goal</h2>
               {loadingGoals ? (
                 <p className="text-gray-400 text-sm">Loading...</p>
@@ -282,44 +497,137 @@ const Reports = () => {
                     Your current saving goal is $
                     {financialGoals.financialGoal.toFixed(2)}
                   </p>
+                  <div className="flex flex-wrap justify-center gap-4 mt-4">
+                    {/* Saving Goal Note */}
+                    <div className="flex items-center gap-2 text-gray-400">
+                      <div className="w-3 h-3 rounded-full bg-[#4ADE80]" />
+                      <span>Saving Goal</span>
+                    </div>
+
+                    {/* Over Budget Note (Conditional) */}
+                    {totalExpenses >
+                      financialGoals.salary - financialGoals.financialGoal && (
+                      <div className="flex items-center gap-2 text-gray-400">
+                        <div className="w-3 h-3 rounded-full bg-[#FB7185]" />
+                        <span>Over Budget</span>
+                      </div>
+                    )}
+                  </div>
                   <div className="flex justify-center mt-4">
-                    <div className="relative w-32 h-32">
+                    <div className="relative w-40 h-40">
                       <svg className="w-full h-full" viewBox="0 0 36 36">
                         <path
                           d="M18 2.0845
                             a 15.9155 15.9155 0 0 1 0 31.831
                             a 15.9155 15.9155 0 0 1 0 -31.831"
                           fill="none"
-                          stroke="#2A2A2A"
+                          stroke="#2A2A2A" // Grey background track
                           strokeWidth="3"
                         />
-                        <path
-                          d="M18 2.0845
-                            a 15.9155 15.9155 0 0 1 0 31.831
-                            a 15.9155 15.9155 0 0 1 0 -31.831"
-                          fill="none"
-                          stroke="#4ADE80"
-                          strokeWidth="3"
-                          strokeDasharray={`${
-                            (financialGoals.financialGoal /
-                              financialGoals.salary) *
-                            100
-                          }, 100`}
-                        />
+
+                        {(() => {
+                          const spendingLimitActual =
+                            financialGoals.salary -
+                            financialGoals.financialGoal;
+                          const amountExceeded =
+                            totalExpenses - spendingLimitActual; // Amount over spending limit
+
+                          const totalSavingGoal = financialGoals.financialGoal;
+                          let greenPercentage = 0;
+                          let redPercentage = 0;
+
+                          if (totalSavingGoal > 0) {
+                            // Only calculate if there's a goal
+                            if (amountExceeded <= 0) {
+                              // Within spending limit, saving goal is fully green
+                              greenPercentage = 100;
+                              redPercentage = 0;
+                            } else {
+                              // Over spending limit, saving goal is eroded
+                              const remainingGoal = Math.max(
+                                0,
+                                totalSavingGoal - amountExceeded
+                              );
+                              const erodedPart = Math.min(
+                                totalSavingGoal,
+                                amountExceeded
+                              ); // Red part, capped by total goal
+
+                              greenPercentage =
+                                (remainingGoal / totalSavingGoal) * 100;
+                              redPercentage =
+                                (erodedPart / totalSavingGoal) * 100;
+
+                              // Ensure percentages sum up to 100 if overspend exceeds goal
+                              if (greenPercentage + redPercentage > 100.01) {
+                                // Floating point tolerance
+                                greenPercentage = 0; // If goal is entirely eroded
+                                redPercentage = 100; // Full red circle
+                              }
+                            }
+                          }
+
+                          // Render green path
+                          const greenPath =
+                            greenPercentage > 0 ? (
+                              <path
+                                key="green-segment"
+                                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                                fill="none"
+                                stroke="#4ADE80" // Green color
+                                strokeWidth="3"
+                                strokeDasharray={`${greenPercentage}, 100`}
+                              />
+                            ) : null;
+
+                          // Render red path
+                          const redPath =
+                            redPercentage > 0 ? (
+                              <path
+                                key="red-segment"
+                                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                                fill="none"
+                                stroke="#FB7185" // Red color
+                                strokeWidth="3"
+                                strokeDasharray={`${redPercentage}, 100`}
+                                strokeDashoffset={-greenPercentage} // Start red after green
+                              />
+                            ) : null;
+
+                          return (
+                            <>
+                              {greenPath}
+                              {redPath}
+                            </>
+                          );
+                        })()}
                       </svg>
                       <div className="absolute inset-0 flex items-center justify-center">
                         <div className="text-center">
                           <div className="text-2xl font-bold text-white">
-                            ${financialGoals.financialGoal.toFixed(2)}
+                            $
+                            {(overBudget > 0
+                              ? financialGoals.financialGoal - overBudget
+                              : financialGoals.financialGoal
+                            ).toFixed(2)}
                           </div>
-                          <div className="text-sm text-gray-400">
-                            of ${financialGoals.salary.toFixed(2)}
-                          </div>
+                          {overBudget > 0 && (
+                            <div className="text-red-500 text-sm mt-1">
+                              -${overBudget.toFixed(2)} ▼
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
                   </div>
                 </>
+              )}
+
+              {isTooltipVisible && tooltipContent && (
+                <div
+                  className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 p-2 bg-gray-800 text-white text-sm rounded-md shadow-lg z-10"
+                  dangerouslySetInnerHTML={{ __html: tooltipContent }}
+                />
               )}
             </div>
           </div>

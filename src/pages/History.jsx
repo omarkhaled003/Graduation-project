@@ -7,9 +7,6 @@ const categories = ["Clothes", "Electronics", "Food & Groceries", "Other"];
 const monthlyBillCategories = [
   "Rent",
   "Utilities",
-  "Internet",
-  "Phone Bill",
-  "Subscription",
   "Loan Payment",
   "Insurance",
   "Other Bills",
