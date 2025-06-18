@@ -27,13 +27,42 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
+    const originalRequest = error.config;
+    // If 401 and not already trying to refresh
+    if (
+      error.response &&
+      error.response.status === 401 &&
+      !originalRequest._retry
+    ) {
+      originalRequest._retry = true;
+      try {
+        const user = JSON.parse(localStorage.getItem("user"));
+        if (user?.token && user?.refreshToken) {
+          // Attempt to refresh token
+          const refreshResponse = await api.post("/User/RefreshToken", {
+            accessToken: user.token,
+            refreshToken: user.refreshToken,
+          });
+          const { token, refreshToken } = refreshResponse.data;
+          // Update localStorage
+          const newUser = { ...user, token, refreshToken };
+          localStorage.setItem("user", JSON.stringify(newUser));
+          // Update Authorization header and retry original request
+          originalRequest.headers["Authorization"] = `Bearer ${token}`;
+          return api(originalRequest);
+        }
+      } catch (refreshError) {
+        // Refresh failed: clear user and redirect to login
+        localStorage.removeItem("user");
+        window.location.href = "/login";
+        return Promise.reject(refreshError);
+      }
+    }
     if (error.code === "ERR_NETWORK") {
       console.error("Network error occurred:", error);
     } else if (error.code === "ECONNABORTED") {
       console.error("Request timeout:", error);
     }
-    // You might want to add more sophisticated error handling here,
-    // e.g., redirecting to login on 401 Unauthorized
     return Promise.reject(error);
   }
 );

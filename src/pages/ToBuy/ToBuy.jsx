@@ -25,34 +25,6 @@ const ToBuy = () => {
   const [allProducts, setAllProducts] = useState([]); // Stores all products fetched from API
   const [displayedProducts, setDisplayedProducts] = useState([]); // Products currently displayed after search/filter
 
-  const stores = [
-    {
-      id: 1,
-      name: "Amazon",
-      logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a9/Amazon_logo.svg/2560px-Amazon_logo.svg.png",
-    },
-    {
-      id: 2,
-      name: "Walmart",
-      logo: "https://cdn.worldvectorlogo.com/logos/walmart.svg",
-    },
-    {
-      id: 3,
-      name: "American Eagle",
-      logo: "https://logos-world.net/wp-content/uploads/2020/11/American-Eagle-Logo.png",
-    },
-    {
-      id: 4,
-      name: "eBay",
-      logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/EBay_logo.svg/2560px-EBay_logo.svg.png",
-    },
-    {
-      id: 5,
-      name: "Carrefour",
-      logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Carrefour_logo.svg/2560px-Carrefour_logo.svg.png",
-    },
-  ];
-
   const fetchProducts = async () => {
     try {
       setLoading(true);
@@ -168,7 +140,7 @@ const ToBuy = () => {
   const removeProduct = async (id) => {
     try {
       setLoading(true);
-      await api.delete(`/ToBuyList/RemoveProduct/${id}`);
+      await api.delete(`/ToBuyList/DeleteFromToBuyList`, { params: { id } });
       fetchProducts(); // Refetch all products to update the list
       fetchShoppingList(); // Also refetch shopping list to update
       setError(null);

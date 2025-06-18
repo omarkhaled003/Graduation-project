@@ -7,7 +7,7 @@ const PrivateRoutes = () => {
 
   console.log("PrivateRoutes: user object from context", user);
 
-  return user && user.token ? <Outlet /> : <Navigate to="/" />;
+  return user && user.token ? <Outlet /> : <Navigate to="/login" />;
 };
 
 export default PrivateRoutes;

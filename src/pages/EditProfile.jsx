@@ -1,5 +1,11 @@
 import React, { useState, useContext } from "react";
-import { FiCamera, FiUser, FiDollarSign, FiFlag } from "react-icons/fi";
+import {
+  FiCamera,
+  FiUser,
+  FiDollarSign,
+  FiFlag,
+  FiCalendar,
+} from "react-icons/fi";
 import api from "../utils/api";
 import UserInfoContext from "../Context/User/UserInfoContext";
 
@@ -15,6 +21,8 @@ const EditProfile = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+  const [aiSuggestion, setAiSuggestion] = useState("");
+  const [showAiModal, setShowAiModal] = useState(false);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -175,6 +183,20 @@ const EditProfile = () => {
     }
   };
 
+  const handleAiSuggestion = async () => {
+    try {
+      const salary = formData.salary || 0;
+      const response = await api.get(
+        `/AiChat/getaisuggestionforfinancial?salary=${salary}`
+      );
+      setAiSuggestion(response.data.suggestion || "No suggestion found.");
+      setShowAiModal(true);
+    } catch (error) {
+      setAiSuggestion("Failed to fetch suggestion.");
+      setShowAiModal(true);
+    }
+  };
+
   return (
     <div className="flex-1 p-4 md:p-6 space-y-6">
       <h2 className="text-2xl font-semibold mb-6 text-center text-white">
@@ -283,7 +305,7 @@ const EditProfile = () => {
           <label htmlFor="salary" className="sr-only">
             Salary
           </label>
-          <div className="relative">
+          <div className="relative flex items-center">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <FiDollarSign className="h-5 w-5 text-gray-400" />
             </div>
@@ -296,6 +318,14 @@ const EditProfile = () => {
               placeholder="Salary"
               className="pl-10 block w-full bg-[#2A2A2A] text-white border-gray-700 rounded-md shadow-sm p-2 focus:border-blue-500 focus:ring-blue-500"
             />
+            <button
+              type="button"
+              onClick={handleAiSuggestion}
+              className="ml-2 px-2 py-1 bg-blue-500 text-white rounded text-xs hover:bg-blue-600 focus:outline-none"
+              title="Get AI Suggestion"
+            >
+              AI Suggest
+            </button>
           </div>
         </div>
 
@@ -378,6 +408,24 @@ const EditProfile = () => {
           {loading ? "Uploading Photo..." : "Update Photo"}
         </button>
       </form>
+
+      {/* AI Suggestion Modal */}
+      {showAiModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-[200]">
+          <div className="bg-[#18181b] rounded-lg p-6 max-w-md w-full relative border border-gray-700">
+            <button
+              onClick={() => setShowAiModal(false)}
+              className="absolute top-2 right-2 text-gray-300 text-2xl font-bold p-1 rounded-full hover:bg-gray-800"
+            >
+              &times;
+            </button>
+            <h2 className="text-lg font-semibold mb-2 text-white">
+              AI Financial Suggestion
+            </h2>
+            <div className="text-white whitespace-pre-line">{aiSuggestion}</div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

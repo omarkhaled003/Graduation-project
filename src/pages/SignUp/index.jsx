@@ -78,7 +78,7 @@ function SignUp() {
 
       console.log("Sending registration request with data:", requestData);
 
-      const response = await fetch("/api/api/User/Register", {
+      const response = await fetch("/api/User/Register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

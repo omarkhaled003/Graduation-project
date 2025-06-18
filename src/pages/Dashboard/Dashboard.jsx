@@ -29,6 +29,18 @@ const Dashboard = () => {
     salary: 0,
     financialGoal: 0,
   });
+  const [lastFiveBills, setLastFiveBills] = useState([]);
+  const [billsAll, setBillsAll] = useState([]);
+  const [billsSearch, setBillsSearch] = useState("");
+  const [billsSearchResults, setBillsSearchResults] = useState([]);
+  const [lastFiveProducts, setLastFiveProducts] = useState([]);
+  const [productSearch, setProductSearch] = useState("");
+  const [productSearchResults, setProductSearchResults] = useState([]);
+  const [productSearchBy, setProductSearchBy] = useState("productName");
+  const [productSearchCategory, setProductSearchCategory] =
+    useState("Food & Groceries");
+  const [productSearchStartDate, setProductSearchStartDate] = useState("");
+  const [productSearchEndDate, setProductSearchEndDate] = useState("");
 
   const applyFiltersToProducts = (products) => {
     return products.filter((product) => {
@@ -93,9 +105,6 @@ const Dashboard = () => {
         const dateB = new Date(b.date);
         return dateB - dateA; // Descending order
       });
-
-      // Take only the latest 10 products
-      productsToFilter = productsToFilter.slice(0, 10);
 
       setPurchasedProducts(productsToFilter);
 
@@ -177,6 +186,36 @@ const Dashboard = () => {
     fetchFinancialGoals();
   }, [user]);
 
+  useEffect(() => {
+    const fetchBills = async () => {
+      if (!user || !user.token) return;
+      try {
+        const response = await api.get("/MonthlyBill/GetMonthlyBillsForUser");
+        if (Array.isArray(response.data)) {
+          const sorted = response.data
+            .filter((bill) => bill.startDate)
+            .sort((a, b) => new Date(b.startDate) - new Date(a.startDate));
+          setBillsAll(sorted.reverse());
+          setLastFiveBills(sorted.slice(0, 5));
+          setBillsSearchResults([]); // Reset search results on fetch
+        } else {
+          setBillsAll([]);
+          setLastFiveBills([]);
+          setBillsSearchResults([]);
+        }
+      } catch (error) {
+        setBillsAll([]);
+        setLastFiveBills([]);
+        setBillsSearchResults([]);
+      }
+    };
+    fetchBills();
+  }, [user]);
+
+  useEffect(() => {
+    setLastFiveProducts(purchasedProducts.slice(0, 5));
+  }, [purchasedProducts]);
+
   const handleSearch = () => {
     setLoading(true);
     setError(null);
@@ -255,18 +294,6 @@ const Dashboard = () => {
   const expensesPercentage =
     spendingGoal > 0 ? (numericTotalExpenses / spendingGoal) * 100 : 0;
 
-  const expenseCategories = [
-    { name: "Search Engine", value: 2234, color: "#38BDF8" },
-    { name: "Food & Drinks", value: 243, color: "#4ADE80" },
-    { name: "Email", value: 641, color: "#FB923C" },
-    { name: "Clothes", value: 1554, color: "#FB7185" },
-  ];
-
-  const totalExpense = expenseCategories.reduce(
-    (sum, item) => sum + item.value,
-    0
-  );
-
   const monthlyBillCategoryColors = useState({
     Rent: "#FF6347", // Tomato
     Utilities: "#4682B4", // SteelBlue
@@ -280,9 +307,13 @@ const Dashboard = () => {
     const fetchLastMonthBills = async () => {
       if (!user || !user.token) return;
       try {
+        console.log(
+          "Calling /MonthlyBill/GetLastMonthBillsWithCategories API..."
+        );
         const response = await api.get(
           "/MonthlyBill/GetLastMonthBillsWithCategories"
         );
+        console.log("Bills details API response:", response.data);
         if (response.data && response.data.categories) {
           const transformedData = Object.keys(response.data.categories).map(
             (category) => ({
@@ -303,59 +334,6 @@ const Dashboard = () => {
     fetchLastMonthBills();
   }, [user, monthlyBillCategoryColors]);
 
-  const latestOrders = [
-    {
-      id: 1,
-      product: "Hat",
-      quantity: 2,
-      date: "Jun 29,2022",
-      shopName: "Tree",
-      category: "clothes",
-      price: 400.0,
-      categoryColor: "#4ADE80",
-    },
-    {
-      id: 2,
-      product: "Mackbook Pro",
-      quantity: 1,
-      date: "Jun 29,2022",
-      shopName: "Electronics",
-      category: "Pending",
-      price: 288.0,
-      categoryColor: "#FB923C",
-    },
-    {
-      id: 3,
-      product: "Meat",
-      quantity: 1,
-      date: "Jun 29,2022",
-      shopName: "Gomla Market",
-      category: "food",
-      price: 500.0,
-      categoryColor: "#FB7185",
-    },
-    {
-      id: 4,
-      product: "Jeans",
-      quantity: 2,
-      date: "Jun 29,2022",
-      shopName: "American Eagle",
-      category: "clothes",
-      price: 100.0,
-      categoryColor: "#4ADE80",
-    },
-    {
-      id: 5,
-      product: "Jacket",
-      quantity: 1,
-      date: "Jun 29,2022",
-      shopName: "American Eagle",
-      category: "Clothes",
-      price: 60.0,
-      categoryColor: "#4ADE80",
-    },
-  ];
-
   const CustomTooltip = ({ active, payload }) => {
     if (active && payload && payload.length) {
       return (
@@ -369,12 +347,68 @@ const Dashboard = () => {
     return null;
   };
 
+  const handleBillsSearch = () => {
+    if (!billsSearch.trim() || /^\d+$/.test(billsSearch.trim())) {
+      setBillsSearchResults([]);
+      return;
+    }
+    const term = billsSearch.trim().toLowerCase();
+    const filtered = billsAll.filter(
+      (bill) =>
+        (bill.issuer && bill.issuer.toLowerCase().includes(term)) ||
+        (bill.category && bill.category.toLowerCase().includes(term))
+    );
+    setBillsSearchResults(filtered);
+  };
+
+  const handleProductSearch = () => {
+    let filtered = [];
+    if (productSearchBy === "productName") {
+      if (!productSearch.trim()) {
+        setProductSearchResults([]);
+        return;
+      }
+      const term = productSearch.trim().toLowerCase();
+      filtered = purchasedProducts.filter(
+        (p) => p.productName && p.productName.toLowerCase().includes(term)
+      );
+    } else if (productSearchBy === "shopName") {
+      if (!productSearch.trim()) {
+        setProductSearchResults([]);
+        return;
+      }
+      const term = productSearch.trim().toLowerCase();
+      filtered = purchasedProducts.filter(
+        (p) => p.shopName && p.shopName.toLowerCase().includes(term)
+      );
+    } else if (productSearchBy === "category") {
+      filtered = purchasedProducts.filter(
+        (p) => p.category === productSearchCategory
+      );
+    } else if (productSearchBy === "dateRange") {
+      if (!productSearchStartDate && !productSearchEndDate) {
+        setProductSearchResults([]);
+        return;
+      }
+      filtered = purchasedProducts.filter((p) => {
+        const productDate = p.date ? new Date(p.date) : null;
+        const start = productSearchStartDate
+          ? new Date(productSearchStartDate)
+          : null;
+        const end = productSearchEndDate
+          ? new Date(productSearchEndDate)
+          : null;
+        return (
+          (!start || (productDate && productDate >= start)) &&
+          (!end || (productDate && productDate <= end))
+        );
+      });
+    }
+    setProductSearchResults(filtered);
+  };
+
   return (
     <>
-      <div className="mb-0">
-        <h1 className="text-2xl font-semibold text-white">Dashboard</h1>
-      </div>
-
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
         {/* To Buy Card */}
       </div>
@@ -424,14 +458,13 @@ const Dashboard = () => {
         {/* Donut Chart Section */}
         <div className="bg-[#1E1E1E] rounded-xl p-4 md:p-6">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-white text-xl font-semibold">
-              Expenses Breakdown
-            </h2>
-            <div className="text-white text-2xl font-bold">
-              {lastMonthBillCategories.reduce(
-                (sum, item) => sum + item.value,
-                0
-              )}
+            <div>
+              <h2 className="text-white text-xl font-semibold">
+                Bills Details
+              </h2>
+              <div className="text-gray-400 text-sm mt-1">
+                (Bills last month)
+              </div>
             </div>
           </div>
           <div className="h-[250px] flex flex-col items-center">
@@ -486,32 +519,84 @@ const Dashboard = () => {
         {/* Latest Orders Section */}
         <div className="bg-[#1E1E1E] rounded-xl p-4 md:p-6">
           <h2 className="text-white text-xl font-semibold mb-4">
-            Latest Orders
+            Monthly Bills
           </h2>
-          <div className="space-y-4">
-            {latestOrders.map((order) => (
-              <div
-                key={order.id}
-                className="flex items-center justify-between p-3 bg-[#2A2A2A] rounded-lg"
-              >
-                <div className="flex items-center space-x-3">
-                  <div
-                    className="w-3 h-3 rounded-full"
-                    style={{ backgroundColor: order.categoryColor }}
-                  />
-                  <div>
-                    <p className="text-white font-medium">{order.product}</p>
-                    <p className="text-gray-400 text-sm">
-                      {order.shopName} • {order.date}
-                    </p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-white font-medium">${order.price}</p>
-                  <p className="text-blue-400 text-xs">{order.quantity} pcs</p>
-                </div>
+          {/* Card inner container for search and table */}
+          <div className="bg-[#232323] rounded-lg p-4">
+            {/* Search input above the table */}
+            <div className="mb-4">
+              <div className="flex items-center gap-2 w-full">
+                <input
+                  type="text"
+                  placeholder="Search by issuer or category..."
+                  className="w-full p-2 rounded bg-[#2A2A2A] text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  value={billsSearch}
+                  onChange={(e) => setBillsSearch(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleBillsSearch();
+                  }}
+                />
+                <button
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded"
+                  onClick={handleBillsSearch}
+                >
+                  Search
+                </button>
               </div>
-            ))}
+            </div>
+            {/* Table format for bills */}
+            <div className="overflow-x-auto rounded-b-lg">
+              <table className="min-w-full bg-[#1E1E1E] rounded-lg overflow-hidden">
+                <thead>
+                  <tr className="bg-[#2A2A2A] text-gray-400 uppercase text-sm leading-normal">
+                    <th className="py-3 px-6 text-left">Issuer</th>
+                    <th className="py-3 px-6 text-left">Category</th>
+                    <th className="py-3 px-6 text-left">Amount</th>
+                    <th className="py-3 px-6 text-left">Start Date</th>
+                    <th className="py-3 px-6 text-left">End Date</th>
+                  </tr>
+                </thead>
+                <tbody className="text-white text-sm font-light">
+                  {(billsSearchResults.length > 0
+                    ? billsSearchResults
+                    : lastFiveBills
+                  ).map((bill) => (
+                    <tr
+                      key={bill.billId}
+                      className="border-b border-gray-600 hover:bg-[#2A2A2A]"
+                    >
+                      <td className="py-3 px-6 text-left">
+                        {bill.issuer || "-"}
+                      </td>
+                      <td className="py-3 px-6 text-left">
+                        {bill.category || "-"}
+                      </td>
+                      <td className="py-3 px-6 text-left">
+                        {bill.amount != null ? `$${bill.amount}` : "-"}
+                      </td>
+                      <td className="py-3 px-6 text-left">
+                        {bill.startDate
+                          ? new Date(bill.startDate).toLocaleDateString()
+                          : "-"}
+                      </td>
+                      <td className="py-3 px-6 text-left">
+                        {bill.endDate
+                          ? new Date(bill.endDate).toLocaleDateString()
+                          : "-"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {(billsSearchResults.length > 0
+                ? billsSearchResults
+                : lastFiveBills
+              ).length === 0 && (
+                <div className="text-gray-400 text-center py-4">
+                  No bills found.
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -521,275 +606,236 @@ const Dashboard = () => {
         <h2 className="text-white text-xl font-semibold mb-4">
           Purchased Products
         </h2>
-
-        <div className="mb-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div>
-            <label
-              htmlFor="searchType"
-              className="block text-sm font-medium text-gray-400 mb-1"
-            >
-              Search By:
-            </label>
-            <select
-              id="searchType"
-              value={searchType}
-              onChange={(e) => {
-                setSearchType(e.target.value);
-                setProductNameFilter("");
-                setShopFilter("");
-                setCategoryFilter("");
-                setStartDateFilter("");
-                setEndDateFilter("");
-              }}
-              className="w-full p-2 rounded-md bg-[#2A2A2A] text-white focus:outline-none focus:ring-2 focus:ring-blue-600"
-            >
-              <option value="">Select Search Type</option>
-              <option value="productName">Product Name</option>
-              <option value="shopName">Shop Name</option>
-              <option value="category">Category</option>
-              <option value="dateRange">Date Range</option>
-            </select>
-          </div>
-
-          {searchType === "productName" && (
+        {/* Product search input above the table */}
+        <div className="mb-4 flex flex-wrap items-center gap-2 w-full">
+          <select
+            className="p-2 rounded bg-[#2A2A2A] text-white focus:outline-none focus:ring-2 focus:ring-blue-600"
+            value={productSearchBy}
+            onChange={(e) => setProductSearchBy(e.target.value)}
+          >
+            <option value="productName">Product Name</option>
+            <option value="shopName">Shop Name</option>
+            <option value="category">Category</option>
+            <option value="dateRange">Date Range</option>
+          </select>
+          {productSearchBy === "productName" && (
             <input
               type="text"
               placeholder="Search by product name..."
-              value={productNameFilter}
-              onChange={(e) => setProductNameFilter(e.target.value)}
-              className="w-full p-2 rounded-md bg-[#2A2A2A] text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600"
+              className="p-2 rounded bg-[#2A2A2A] text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 w-[250px]"
+              value={productSearch}
+              onChange={(e) => setProductSearch(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleProductSearch();
+              }}
             />
           )}
-
-          {searchType === "shopName" && (
+          {productSearchBy === "shopName" && (
             <input
               type="text"
               placeholder="Search by shop name..."
-              value={shopFilter}
-              onChange={(e) => setShopFilter(e.target.value)}
-              className="w-full p-2 rounded-md bg-[#2A2A2A] text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600"
+              className="p-2 rounded bg-[#2A2A2A] text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 w-[250px]"
+              value={productSearch}
+              onChange={(e) => setProductSearch(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleProductSearch();
+              }}
             />
           )}
-
-          {searchType === "category" && (
+          {productSearchBy === "category" && (
             <select
-              id="category"
-              name="category"
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-              className="w-full p-2 rounded-md bg-[#2A2A2A] text-white focus:outline-none focus:ring-2 focus:ring-blue-600"
+              className="p-2 rounded bg-[#2A2A2A] text-white focus:outline-none focus:ring-2 focus:ring-blue-600 w-[250px]"
+              value={productSearchCategory}
+              onChange={(e) => setProductSearchCategory(e.target.value)}
             >
-              <option value="">Select a category</option>
-              {categories.map((category) => (
-                <option key={category} value={category}>
-                  {category}
-                </option>
-              ))}
+              <option value="Food & Groceries">Food & Groceries</option>
+              <option value="Clothes">Clothes</option>
+              <option value="Electronics">Electronics</option>
+              <option value=" Other">Other</option>
             </select>
           )}
-
-          {searchType === "dateRange" && (
+          {productSearchBy === "dateRange" && (
             <>
-              <div>
-                <label
-                  htmlFor="startDate"
-                  className="block text-sm font-medium text-gray-400 mb-1"
-                >
-                  Start Date:
-                </label>
-                <input
-                  type="date"
-                  id="startDate"
-                  placeholder="Start Date..."
-                  value={startDateFilter}
-                  onChange={(e) => setStartDateFilter(e.target.value)}
-                  className="w-full p-2 rounded-md bg-[#2A2A2A] text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="endDate"
-                  className="block text-sm font-medium text-gray-400 mb-1"
-                >
-                  End Date:
-                </label>
-                <input
-                  type="date"
-                  id="endDate"
-                  placeholder="End Date..."
-                  value={endDateFilter}
-                  onChange={(e) => setEndDateFilter(e.target.value)}
-                  className="w-full p-2 rounded-md bg-[#2A2A2A] text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                />
-              </div>
+              <input
+                type="date"
+                className="p-2 rounded bg-[#2A2A2A] text-white focus:outline-none focus:ring-2 focus:ring-blue-600 w-[130px]"
+                value={productSearchStartDate}
+                onChange={(e) => setProductSearchStartDate(e.target.value)}
+              />
+              <span className="text-gray-400">to</span>
+              <input
+                type="date"
+                className="p-2 rounded bg-[#2A2A2A] text-white focus:outline-none focus:ring-2 focus:ring-blue-600 w-[130px]"
+                value={productSearchEndDate}
+                onChange={(e) => setProductSearchEndDate(e.target.value)}
+              />
             </>
           )}
-
-          {(searchType === "productName" ||
-            searchType === "shopName" ||
-            searchType === "category" ||
-            searchType === "dateRange") && (
-            <button
-              onClick={handleSearch}
-              className="w-full p-2 rounded-md bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-600"
-            >
-              Search
-            </button>
+          <button
+            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded"
+            onClick={handleProductSearch}
+          >
+            Search
+          </button>
+        </div>
+        {/* Table as before, but show lastFiveProducts or productSearchResults */}
+        <div className="overflow-x-auto lg:overflow-x-visible">
+          <table className="min-w-full bg-[#1E1E1E] rounded-lg overflow-hidden">
+            <thead>
+              <tr className="bg-[#2A2A2A] text-gray-400 uppercase text-sm leading-normal">
+                <th className="py-3 px-6 text-left">Product Name</th>
+                <th className="py-3 px-6 text-left">Quantity</th>
+                <th className="py-3 px-6 text-left">Price</th>
+                <th className="py-3 px-6 text-left">Shop Name</th>
+                <th className="py-3 px-6 text-left">Date</th>
+                <th className="py-3 px-6 text-left">Category</th>
+                <th className="py-3 px-6 text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="text-white text-sm font-light">
+              {(productSearchResults.length > 0
+                ? productSearchResults
+                : lastFiveProducts
+              ).map((product) => (
+                <tr
+                  key={product.id}
+                  className="border-b border-gray-600 hover:bg-[#2A2A2A]"
+                >
+                  <td className="py-3 px-6 text-left whitespace-nowrap">
+                    {editingProductId === product.id ? (
+                      <input
+                        name="productName"
+                        value={editFormData.productName || ""}
+                        onChange={handleFormChange}
+                        className="p-1 rounded bg-[#232323] text-white w-28"
+                      />
+                    ) : (
+                      product.productName
+                    )}
+                  </td>
+                  <td className="py-3 px-6 text-left">
+                    {editingProductId === product.id ? (
+                      <input
+                        name="quantity"
+                        type="number"
+                        value={editFormData.quantity || 1}
+                        onChange={handleFormChange}
+                        className="p-1 rounded bg-[#232323] text-white w-16"
+                      />
+                    ) : (
+                      product.quantity
+                    )}
+                  </td>
+                  <td className="py-3 px-6 text-left">
+                    {editingProductId === product.id ? (
+                      <input
+                        name="price"
+                        type="number"
+                        step="0.01"
+                        value={editFormData.price || 0}
+                        onChange={handleFormChange}
+                        className="p-1 rounded bg-[#232323] text-white w-20"
+                      />
+                    ) : (
+                      `$${product.price.toFixed(2)}`
+                    )}
+                  </td>
+                  <td className="py-3 px-6 text-left">
+                    {editingProductId === product.id ? (
+                      <input
+                        name="shopName"
+                        value={editFormData.shopName || ""}
+                        onChange={handleFormChange}
+                        className="p-1 rounded bg-[#232323] text-white w-24"
+                      />
+                    ) : (
+                      product.shopName
+                    )}
+                  </td>
+                  <td className="py-3 px-6 text-left">
+                    {editingProductId === product.id ? (
+                      <input
+                        name="date"
+                        type="date"
+                        value={
+                          editFormData.date
+                            ? editFormData.date.split("T")[0]
+                            : ""
+                        }
+                        onChange={handleFormChange}
+                        className="p-1 rounded bg-[#232323] text-white w-28"
+                      />
+                    ) : (
+                      new Date(product.date).toLocaleDateString()
+                    )}
+                  </td>
+                  <td className="py-3 px-6 text-left">
+                    {editingProductId === product.id ? (
+                      <select
+                        name="category"
+                        value={editFormData.category || ""}
+                        onChange={handleFormChange}
+                        className="p-1 rounded bg-[#232323] text-white w-32"
+                      >
+                        <option value="Food & Groceries">
+                          Food & Groceries
+                        </option>
+                        <option value="Clothes">Clothes</option>
+                        <option value="Electronics">Electronics</option>
+                        <option value=" Other">Other</option>
+                      </select>
+                    ) : (
+                      product.category
+                    )}
+                  </td>
+                  <td className="py-3 px-6 text-center">
+                    <div className="flex item-center justify-center">
+                      {editingProductId === product.id ? (
+                        <>
+                          <button
+                            onClick={handleUpdateProduct}
+                            className="w-6 mr-2 transform hover:text-green-500 hover:scale-110"
+                          >
+                            Save
+                          </button>
+                          <button
+                            onClick={handleCancelEdit}
+                            className="w-6 transform hover:text-red-500 hover:scale-110"
+                          >
+                            Cancel
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => handleEditClick(product)}
+                            className="w-6 mr-2 transform hover:text-blue-500 hover:scale-110"
+                          >
+                            <FiEdit />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(product.id)}
+                            className="w-6 transform hover:text-red-500 hover:scale-110"
+                          >
+                            <FiTrash2 />
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {(productSearchResults.length > 0
+            ? productSearchResults
+            : lastFiveProducts
+          ).length === 0 && (
+            <div className="text-gray-400 text-center py-4">
+              No products found.
+            </div>
           )}
         </div>
-
-        {loading && <p className="text-white">Loading products...</p>}
-        {error && <p className="text-red-500">Error: {error}</p>}
-
-        {!loading && !error && displayedProducts.length === 0 && (
-          <p className="text-gray-400">No purchased products found.</p>
-        )}
-
-        {!loading && !error && displayedProducts.length > 0 && (
-          <div className="overflow-x-auto">
-            <table className="min-w-full bg-[#1E1E1E] rounded-lg overflow-hidden">
-              <thead>
-                <tr className="bg-[#2A2A2A] text-gray-400 uppercase text-sm leading-normal">
-                  <th className="py-3 px-6 text-left">Product Name</th>
-                  <th className="py-3 px-6 text-left">Quantity</th>
-                  <th className="py-3 px-6 text-left">Price</th>
-                  <th className="py-3 px-6 text-left">Shop Name</th>
-                  <th className="py-3 px-6 text-left">Date</th>
-                  <th className="py-3 px-6 text-left">Category</th>
-                  <th className="py-3 px-6 text-center">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="text-white text-sm font-light">
-                {displayedProducts.map((product) => (
-                  <tr
-                    key={product.id}
-                    className="border-b border-gray-600 hover:bg-[#2A2A2A]"
-                  >
-                    <td className="py-3 px-6 text-left whitespace-nowrap">
-                      {editingProductId === product.id ? (
-                        <input
-                          type="text"
-                          name="productName"
-                          value={editFormData.productName || ""}
-                          onChange={handleFormChange}
-                          className="bg-[#2A2A2A] text-white p-1 rounded w-full"
-                        />
-                      ) : (
-                        product.productName
-                      )}
-                    </td>
-                    <td className="py-3 px-6 text-left">
-                      {editingProductId === product.id ? (
-                        <input
-                          type="number"
-                          name="quantity"
-                          value={editFormData.quantity || ""}
-                          onChange={handleFormChange}
-                          className="bg-[#2A2A2A] text-white p-1 rounded w-full"
-                        />
-                      ) : (
-                        product.quantity
-                      )}
-                    </td>
-                    <td className="py-3 px-6 text-left">
-                      {editingProductId === product.id ? (
-                        <input
-                          type="number"
-                          name="price"
-                          value={editFormData.price || ""}
-                          onChange={handleFormChange}
-                          className="bg-[#2A2A2A] text-white p-1 rounded w-full"
-                        />
-                      ) : (
-                        `$${product.price.toFixed(2)}`
-                      )}
-                    </td>
-                    <td className="py-3 px-6 text-left">
-                      {editingProductId === product.id ? (
-                        <input
-                          type="text"
-                          name="shopName"
-                          value={editFormData.shopName || ""}
-                          onChange={handleFormChange}
-                          className="bg-[#2A2A2A] text-white p-1 rounded w-full"
-                        />
-                      ) : (
-                        product.shopName
-                      )}
-                    </td>
-                    <td className="py-3 px-6 text-left">
-                      {editingProductId === product.id ? (
-                        <input
-                          type="date"
-                          name="date"
-                          value={
-                            editFormData.date
-                              ? new Date(editFormData.date)
-                                  .toISOString()
-                                  .split("T")[0]
-                              : ""
-                          }
-                          onChange={handleFormChange}
-                          className="bg-[#2A2A2A] text-white p-1 rounded w-full"
-                        />
-                      ) : (
-                        new Date(product.date).toLocaleDateString()
-                      )}
-                    </td>
-                    <td className="py-3 px-6 text-left">
-                      {editingProductId === product.id ? (
-                        <input
-                          type="text"
-                          name="category"
-                          value={editFormData.category || ""}
-                          onChange={handleFormChange}
-                          className="bg-[#2A2A2A] text-white p-1 rounded w-full"
-                        />
-                      ) : (
-                        product.category
-                      )}
-                    </td>
-                    <td className="py-3 px-6 text-center">
-                      <div className="flex item-center justify-center">
-                        {editingProductId === product.id ? (
-                          <>
-                            <button
-                              onClick={handleUpdateProduct}
-                              className="w-6 mr-2 transform hover:text-green-500 hover:scale-110"
-                            >
-                              Save
-                            </button>
-                            <button
-                              onClick={handleCancelEdit}
-                              className="w-6 transform hover:text-red-500 hover:scale-110"
-                            >
-                              Cancel
-                            </button>
-                          </>
-                        ) : (
-                          <>
-                            <button
-                              onClick={() => handleEditClick(product)}
-                              className="w-6 mr-2 transform hover:text-blue-500 hover:scale-110"
-                            >
-                              <FiEdit />
-                            </button>
-                            <button
-                              onClick={() => handleDelete(product.id)}
-                              className="w-6 transform hover:text-red-500 hover:scale-110"
-                            >
-                              <FiTrash2 />
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
       </div>
     </>
   );

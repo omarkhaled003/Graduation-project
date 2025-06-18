@@ -5,10 +5,13 @@ import { IoStatsChartOutline } from "react-icons/io5";
 import { BiHistory } from "react-icons/bi";
 import { BsCart3 } from "react-icons/bs";
 import clsx from "clsx";
+import { useContext } from "react";
+import UserInfoContext from "../Context/User/UserInfoContext";
 
 const Navbar = ({ className }) => {
   const location = useLocation();
-  const user = JSON.parse(localStorage.getItem("user"));
+  const { user } = useContext(UserInfoContext);
+  console.log("[Navbar] user:", user);
 
   return (
     <nav
@@ -19,9 +22,7 @@ const Navbar = ({ className }) => {
     >
       <div className="space-y-8">
         {/* Logo Section */}
-        <div className="flex items-center space-x-3 px-4">
-          <span className="text-xl font-semibold text-white">Reports</span>
-        </div>
+        <div className="flex items-center space-x-3 px-4"></div>
 
         {/* Navigation Links */}
         <div className="space-y-2">
@@ -74,6 +75,19 @@ const Navbar = ({ className }) => {
             <BsCart3 className="w-5 h-5" />
             <span>To Buy</span>
           </Link>
+
+          {user && (user.isAdmin || user.email === "admin@admin.com") && (
+            <Link
+              to="/admin"
+              className={`flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-[#2a2a2a] hover:text-yellow-400 transition-colors ${
+                location.pathname === "/admin"
+                  ? "text-yellow-400 bg-[#2a2a2a]"
+                  : "text-gray-300"
+              }`}
+            >
+              <span className="font-bold">Admin Panel</span>
+            </Link>
+          )}
         </div>
       </div>
     </nav>

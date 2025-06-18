@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { FiCalendar, FiUploadCloud } from "react-icons/fi";
 import axios from "axios";
 
-const categories = ["Clothes", "Electronics", "Food & Groceries", "Other"];
+const categories = ["Clothes", "Electronics", "Food & Groceries", " Other"];
 
 const monthlyBillCategories = [
   "Rent",
@@ -216,8 +216,12 @@ const History = () => {
           issuer: monthlyBillData.issuer || "",
           category: monthlyBillData.category || "",
           amount: parseFloat(monthlyBillData.amount) || 0,
-          startDate: now.toISOString(), // Use current time for startDate
-          endDate: now.toISOString(), // Use current time for endDate
+          startDate: startDateInput
+            ? new Date(startDateInput).toISOString()
+            : now.toISOString(),
+          endDate: endDateInput
+            ? new Date(endDateInput).toISOString()
+            : now.toISOString(),
           duration: parseInt(monthlyBillData.duration) || 0,
         };
 

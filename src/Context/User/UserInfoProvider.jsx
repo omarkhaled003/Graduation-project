@@ -15,12 +15,14 @@ export default function UserInfoProvider({ children }) {
   });
 
   const login = (userData) => {
+    console.log("[login] Saving user to localStorage:", userData);
     localStorage.setItem("user", JSON.stringify(userData));
     setUserData(userData);
     setIsLogin(true);
   };
 
   const logout = () => {
+    console.log("[logout] Removing user from localStorage");
     localStorage.removeItem("user");
     setUserData(null);
     setIsLogin(false);

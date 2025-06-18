@@ -7,3 +7,23 @@ body {
   background-color: #121212;
 }
 
+/* Dark scrollbar styling */
+::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+  background: #222;
+}
+::-webkit-scrollbar-thumb {
+  background: #444;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #666;
+}
+
+/* For Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #444 #222;
+}
+

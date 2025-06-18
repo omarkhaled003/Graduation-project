@@ -39,8 +39,20 @@ export default function Login() {
       console.log("Login response:", response.data);
 
       if (response.data) {
-        console.log("Login successful, calling context login");
-        login(response.data);
+        console.log("[Login] username:", username);
+        const isAdmin =
+          (response.data.roles &&
+            Array.isArray(response.data.roles) &&
+            response.data.roles.includes("Admin")) ||
+          response.data.email === "admin@admin.com" ||
+          username === "admin@admin.com";
+        const userObj = {
+          ...response.data,
+          isAdmin,
+          email: response.data.email || username,
+        };
+        console.log("[Login] userObj to be saved:", userObj);
+        login(userObj);
         navigate("/");
       } else {
         console.log("Invalid response data");
@@ -122,15 +134,6 @@ export default function Login() {
             </div>
           </div>
           <div className="flex items-center justify-between mb-6">
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                className="form-checkbox h-4 w-4 text-blue-600"
-                checked={rememberMe}
-                onChange={(e) => setRememberMe(e.target.checked)}
-              />
-              <span className="ml-2 text-gray-400 text-sm">Remember me</span>
-            </label>
             <Link
               to="/forgot-password"
               className="text-blue-500 hover:text-blue-400 text-sm"

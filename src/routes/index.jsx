@@ -16,6 +16,9 @@ import EditProfile from "../pages/EditProfile.jsx";
 import BestPrice from "../pages/BestPrice/BestPrice.jsx";
 import ProductDetails from "../pages/ProductDetails/ProductDetails.jsx";
 import Notifications from "../pages/Notifications.jsx";
+import ForgotPassword from "../pages/ForgotPassword/ForgotPassword.jsx";
+import AdminPanel from "../pages/AdminPanel/AdminPanel.jsx";
+import AdminRoute from "./AdminRoute.jsx";
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -24,6 +27,8 @@ const router = createBrowserRouter(
       <Route element={<AuthLayout />}>
         <Route path="login" element={<Login />} />
         <Route path="signup" element={<SignUp />} />
+        <Route path="register" element={<SignUp />} />
+        <Route path="forgot-password" element={<ForgotPassword />} />
       </Route>
 
       {/* Protected Routes */}
@@ -38,6 +43,14 @@ const router = createBrowserRouter(
           <Route path="product-details/:id" element={<ProductDetails />} />
           <Route path="edit-profile" element={<EditProfile />} />
           <Route path="notifications" element={<Notifications />} />
+          <Route
+            path="admin"
+            element={
+              <AdminRoute>
+                <AdminPanel />
+              </AdminRoute>
+            }
+          />
         </Route>
       </Route>
 

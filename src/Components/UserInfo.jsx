@@ -14,6 +14,8 @@ const UserInfo = ({ user }) => {
   const [profilePhotoUrl, setProfilePhotoUrl] = useState(null); // New state for photo URL
   const [userName, setUserName] = useState(null); // New state for user's name
   const [isImageModalOpen, setIsImageModalToOpen] = useState(false); // New state for image modal
+  const [aiSuggestion, setAiSuggestion] = useState("");
+  const [showAiModal, setShowAiModal] = useState(false);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
 
@@ -29,7 +31,22 @@ const UserInfo = ({ user }) => {
   };
 
   const toggleImageModal = () => {
-    setIsImageModalToOpen(!isImageModalToOpen);
+    setIsImageModalToOpen(!isImageModalOpen);
+  };
+
+  const handleAiSuggestion = async () => {
+    try {
+      // Try to get salary from user object or fallback
+      const salary = user?.salary || 0;
+      const response = await api.get(
+        `/AiChat/getaisuggestionforfinancial?salary=${salary}`
+      );
+      setAiSuggestion(response.data.suggestion || "No suggestion found.");
+      setShowAiModal(true);
+    } catch (error) {
+      setAiSuggestion("Failed to fetch suggestion.");
+      setShowAiModal(true);
+    }
   };
 
   // Close dropdown when clicking outside
@@ -121,6 +138,21 @@ const UserInfo = ({ user }) => {
         <span className="hidden sm:inline">
           {userName || user?.email || "User"}
         </span>
+        {/* Salary display with AI suggestion button */}
+        {user?.salary !== undefined && (
+          <span className="ml-2 flex items-center text-sm text-gray-300">
+            Salary:{" "}
+            <span className="font-bold text-white ml-1">{user.salary}</span>
+            <button
+              onClick={handleAiSuggestion}
+              className="ml-2 px-2 py-1 bg-blue-500 text-white rounded text-xs hover:bg-blue-600 focus:outline-none"
+              title="Get AI Suggestion"
+              type="button"
+            >
+              AI Suggest
+            </button>
+          </span>
+        )}
       </button>
 
       {dropdownOpen && (
@@ -175,6 +207,26 @@ const UserInfo = ({ user }) => {
                 {"U"}
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* AI Suggestion Modal */}
+      {showAiModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[200]">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full relative">
+            <button
+              onClick={() => setShowAiModal(false)}
+              className="absolute top-2 right-2 text-gray-700 text-2xl font-bold p-1 rounded-full hover:bg-gray-200"
+            >
+              &times;
+            </button>
+            <h2 className="text-lg font-semibold mb-2 text-gray-800">
+              AI Financial Suggestion
+            </h2>
+            <div className="text-gray-700 whitespace-pre-line">
+              {aiSuggestion}
+            </div>
           </div>
         </div>
       )}

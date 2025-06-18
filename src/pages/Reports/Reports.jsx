@@ -31,20 +31,13 @@ const Reports = () => {
     []
   ); // New state for daily product categories
   const [categoryColorsMap] = useState({
-    Bills: "#8884d8", // Example color for bills
+    Bills: "#8884d8", // Distinct color for all bills
     "Food & Groceries": "#4ADE80",
-    Shopping: "#FB7185",
-    Transportation: "#FB923C",
-    Others: "#38BDF8",
-    Other: "#FF7F50", // Added color for 'Other' category
+
+    " Other": "#FF7F50", // Added color for ' Other' (with space)
     Clothes: "#8A2BE2", // Added color for Clothes
     Electronics: "#00CED1", // Added color for Electronics
-    phone: "#FFC658",
-    Internet: "#A1E0E0",
-    Mobile: "#D8BFD8",
-    Utilities: "#F08080",
-    string: "#ADD8E6", // Assuming 'string' is a placeholder or generic category
-    Insurance: "#DA70D6",
+
     // Add more colors for other potential categories if needed
   });
 
@@ -123,7 +116,8 @@ const Reports = () => {
             };
           });
           // Reverse the order to display from oldest to newest month on the chart
-          setRevenueData(processedData.reverse());
+          console.log("Processed Revenue Data (last 7 months):", processedData);
+          setRevenueData(processedData);
         } else {
           setRevenueData([]);
         }
@@ -155,21 +149,19 @@ const Reports = () => {
 
             const monthlyData = { day: monthLabel };
 
-            // Process billsCategory
-            const totalBills = Object.values(item.billsCategory || {}).reduce(
-              (sum, value) => sum + value,
-              0
-            );
+            // Group all bills under 'Bills'
+            const totalBills = item.billSum || 0;
             monthlyData.Bills = totalBills;
 
             // Process productsCategory
             for (const category in item.productsCategory) {
+              if (category === "Bills") continue; // Prevent overwrite
               monthlyData[category] = item.productsCategory[category];
             }
 
             return monthlyData;
           });
-          setMonthlyCategoriesData(processedData.reverse());
+          setMonthlyCategoriesData(processedData);
         } else {
           setMonthlyCategoriesData([]);
         }
@@ -233,12 +225,25 @@ const Reports = () => {
 
   const total = pieChartData.reduce((sum, item) => sum + item.value, 0); // Recalculate total for PieChart
 
+  // Compute all unique product category keys across all months (including 'Bills')
+  const allProductCategoryKeys = Array.from(
+    new Set(
+      monthlyCategoriesData
+        .flatMap((month) => Object.keys(month))
+        .filter((key) => key !== "day")
+    )
+  );
+
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
+      // Filter out Bills if its value is 0
+      const filteredPayload = payload.filter(
+        (entry) => entry.name !== "Bills" || entry.value > 0
+      );
       return (
         <div className="bg-[#2A2A2A] p-2 rounded-lg border border-gray-600">
           {label && <p className="text-gray-300 mb-1">{label}</p>}
-          {payload.map((entry, index) => (
+          {filteredPayload.map((entry, index) => (
             <div key={index} className="text-sm text-white">
               <span style={{ color: entry.color }}>
                 {entry.name || entry.category}
@@ -359,57 +364,37 @@ const Reports = () => {
                     <XAxis dataKey="day" stroke="#6B7280" />
                     <YAxis stroke="#6B7280" />
                     <Tooltip content={<CustomTooltip />} />
-                    {Object.keys(monthlyCategoriesData[0] || {}).map((key) => {
-                      if (key !== "day") {
-                        return (
-                          <Bar
-                            key={key}
-                            dataKey={key}
-                            stackId="a"
-                            fill={categoryColorsMap[key] || "#CCCCCC"} // Use defined colors or a default
-                          />
-                        );
-                      }
-                      return null;
-                    })}
+                    {allProductCategoryKeys.map((key) => (
+                      <Bar
+                        key={key}
+                        dataKey={key}
+                        stackId="a"
+                        fill={categoryColorsMap[key] || "#CCCCCC"}
+                      />
+                    ))}
                   </BarChart>
                 </ResponsiveContainer>
               )}
             </div>
 
+            {/* Move legend below the chart and show all categories with their colors */}
             <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {Object.keys(categoryColorsMap).map((category, index) => {
-                const categoriesToRemove = [
-                  "Shopping",
-                  "Others",
-                  "Transportation",
-                  "phone",
-                  "Internet",
-                  "Mobile",
-                  "Utilities",
-                  "string",
-                  "Insurance",
-                ];
-
-                if (activeChart === "donut" && category === "Bills") {
-                  return null; // Do not render 'Bills' when donut chart is active
-                }
-
-                if (categoriesToRemove.includes(category)) {
-                  return null; // Don't render these categories
-                }
-                return (
+              {Object.keys(categoryColorsMap)
+                .filter(
+                  (category) => activeChart === "bar" || category !== "Bills"
+                )
+                .map((category, index) => (
                   <div key={index} className="flex items-center space-x-2">
                     <div
                       className="w-3 h-3 rounded-full"
-                      style={{ backgroundColor: categoryColorsMap[category] }}
+                      style={{
+                        backgroundColor:
+                          categoryColorsMap[category] || "#CCCCCC",
+                      }}
                     />
                     <span className="text-gray-400">{category}</span>
-                    {/* Display total for the category if needed, or remove this part */}
-                    {/* <span className="text-white font-medium">${item.value.toFixed(2)}</span> */}
                   </div>
-                );
-              })}
+                ))}
             </div>
           </div>
 
