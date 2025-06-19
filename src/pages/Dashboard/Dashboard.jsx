@@ -229,7 +229,12 @@ const Dashboard = () => {
     }
     try {
       await api.delete(`/PurchasedProduct/DeletePurchasedProduct?id=${id}`);
-      fetchPurchasedProducts(false);
+      // Refresh the data immediately after deletion
+      await fetchPurchasedProducts(false);
+      // Update the last five products
+      setLastFiveProducts(purchasedProducts.slice(0, 5));
+      // Refresh total expenses
+      await fetchTotalExpenses();
     } catch (e) {
       setError(e.message);
     }
@@ -246,12 +251,16 @@ const Dashboard = () => {
       return;
     }
     try {
-      const response = await api.put(
+      await api.put(
         `/PurchasedProduct/UpdatePurchasedProduct?id=${editingProductId}`,
         editFormData
       );
-
-      fetchPurchasedProducts(false);
+      // Refresh the data immediately after update
+      await fetchPurchasedProducts(false);
+      // Update the last five products
+      setLastFiveProducts(purchasedProducts.slice(0, 5));
+      // Refresh total expenses
+      await fetchTotalExpenses();
       setEditingProductId(null);
       setEditFormData({});
     } catch (e) {
@@ -572,7 +581,7 @@ const Dashboard = () => {
                         {bill.category || "-"}
                       </td>
                       <td className="py-3 px-6 text-left">
-                        {bill.amount != null ? `$${bill.amount}` : "-"}
+                        {bill.amount != null ? `E£${bill.amount}` : "-"}
                       </td>
                       <td className="py-3 px-6 text-left">
                         {bill.startDate
@@ -678,18 +687,18 @@ const Dashboard = () => {
             Search
           </button>
         </div>
-        {/* Table as before, but show lastFiveProducts or productSearchResults */}
-        <div className="overflow-x-auto lg:overflow-x-visible">
-          <table className="min-w-full bg-[#1E1E1E] rounded-lg overflow-hidden">
+        {/* Table */}
+        <div className="w-full">
+          <table className="w-full bg-[#1E1E1E] rounded-lg">
             <thead>
               <tr className="bg-[#2A2A2A] text-gray-400 uppercase text-sm leading-normal">
-                <th className="py-3 px-6 text-left">Product Name</th>
-                <th className="py-3 px-6 text-left">Quantity</th>
-                <th className="py-3 px-6 text-left">Price</th>
-                <th className="py-3 px-6 text-left">Shop Name</th>
-                <th className="py-3 px-6 text-left">Date</th>
-                <th className="py-3 px-6 text-left">Category</th>
-                <th className="py-3 px-6 text-center">Actions</th>
+                <th className="py-3 px-4 text-left">Product Name</th>
+                <th className="py-3 px-2 text-left">Qty</th>
+                <th className="py-3 px-4 text-left">Price</th>
+                <th className="py-3 px-4 text-left">Shop Name</th>
+                <th className="py-3 px-4 text-left">Date</th>
+                <th className="py-3 px-4 text-left">Category</th>
+                <th className="py-3 px-4 text-center">Actions</th>
               </tr>
             </thead>
             <tbody className="text-white text-sm font-light">
@@ -701,7 +710,7 @@ const Dashboard = () => {
                   key={product.id}
                   className="border-b border-gray-600 hover:bg-[#2A2A2A]"
                 >
-                  <td className="py-3 px-6 text-left whitespace-nowrap">
+                  <td className="py-3 px-4 text-left whitespace-nowrap">
                     {editingProductId === product.id ? (
                       <input
                         name="productName"
@@ -710,10 +719,12 @@ const Dashboard = () => {
                         className="p-1 rounded bg-[#232323] text-white w-28"
                       />
                     ) : (
-                      product.productName
+                      <div className="max-w-[150px] truncate">
+                        {product.productName}
+                      </div>
                     )}
                   </td>
-                  <td className="py-3 px-6 text-left">
+                  <td className="py-3 px-2 text-left">
                     {editingProductId === product.id ? (
                       <input
                         name="quantity"
@@ -726,7 +737,7 @@ const Dashboard = () => {
                       product.quantity
                     )}
                   </td>
-                  <td className="py-3 px-6 text-left">
+                  <td className="py-3 px-4 text-left whitespace-nowrap">
                     {editingProductId === product.id ? (
                       <input
                         name="price"
@@ -737,10 +748,10 @@ const Dashboard = () => {
                         className="p-1 rounded bg-[#232323] text-white w-20"
                       />
                     ) : (
-                      `$${product.price.toFixed(2)}`
+                      `E£${product.price.toFixed(2)}`
                     )}
                   </td>
-                  <td className="py-3 px-6 text-left">
+                  <td className="py-3 px-4 text-left">
                     {editingProductId === product.id ? (
                       <input
                         name="shopName"
@@ -749,10 +760,12 @@ const Dashboard = () => {
                         className="p-1 rounded bg-[#232323] text-white w-24"
                       />
                     ) : (
-                      product.shopName
+                      <div className="max-w-[120px] truncate">
+                        {product.shopName}
+                      </div>
                     )}
                   </td>
-                  <td className="py-3 px-6 text-left">
+                  <td className="py-3 px-4 text-left whitespace-nowrap">
                     {editingProductId === product.id ? (
                       <input
                         name="date"
@@ -769,7 +782,7 @@ const Dashboard = () => {
                       new Date(product.date).toLocaleDateString()
                     )}
                   </td>
-                  <td className="py-3 px-6 text-left">
+                  <td className="py-3 px-4 text-left">
                     {editingProductId === product.id ? (
                       <select
                         name="category"
@@ -785,22 +798,24 @@ const Dashboard = () => {
                         <option value=" Other">Other</option>
                       </select>
                     ) : (
-                      product.category
+                      <div className="max-w-[120px] truncate">
+                        {product.category}
+                      </div>
                     )}
                   </td>
-                  <td className="py-3 px-6 text-center">
-                    <div className="flex item-center justify-center">
+                  <td className="py-3 px-4 text-center">
+                    <div className="flex items-center justify-center space-x-3">
                       {editingProductId === product.id ? (
                         <>
                           <button
                             onClick={handleUpdateProduct}
-                            className="w-6 mr-2 transform hover:text-green-500 hover:scale-110"
+                            className="text-green-500 hover:text-green-400 transition-colors"
                           >
                             Save
                           </button>
                           <button
                             onClick={handleCancelEdit}
-                            className="w-6 transform hover:text-red-500 hover:scale-110"
+                            className="text-red-500 hover:text-red-400 transition-colors"
                           >
                             Cancel
                           </button>
@@ -809,13 +824,13 @@ const Dashboard = () => {
                         <>
                           <button
                             onClick={() => handleEditClick(product)}
-                            className="w-6 mr-2 transform hover:text-blue-500 hover:scale-110"
+                            className="text-blue-500 hover:text-blue-400 transition-colors"
                           >
                             <FiEdit />
                           </button>
                           <button
                             onClick={() => handleDelete(product.id)}
-                            className="w-6 transform hover:text-red-500 hover:scale-110"
+                            className="text-red-500 hover:text-red-400 transition-colors"
                           >
                             <FiTrash2 />
                           </button>
