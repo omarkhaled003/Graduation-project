@@ -12,6 +12,7 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
+import api from "../../utils/api";
 
 ChartJS.register(
   CategoryScale,
@@ -32,6 +33,19 @@ const ProductDetails = () => {
   const [priceHistoryData, setPriceHistoryData] = useState([]);
   const [viewProductMessage, setViewProductMessage] = useState("");
   const [showProductModal, setShowProductModal] = useState(false);
+  const [showPurchaseForm, setShowPurchaseForm] = useState(false);
+  const [purchaseFormData, setPurchaseFormData] = useState({
+    itemName: "",
+    category: "",
+    quantity: 1,
+    price: "",
+    date: "",
+    shopName: "",
+  });
+  const [purchaseFormError, setPurchaseFormError] = useState("");
+  const [purchaseFormSuccess, setPurchaseFormSuccess] = useState("");
+
+  const categories = ["Clothes", "Electronics", "Food & Groceries", "Other"];
 
   const api = axios.create({
     baseURL: "/api",
@@ -108,6 +122,81 @@ const ProductDetails = () => {
     } catch (error) {
       setViewProductMessage("Failed to mark product as purchased.");
       console.error("Failed to mark as purchased:", error);
+    }
+  };
+
+  const handleMarkAsPurchased = (product) => {
+    // Pre-fill the form with product data and today's date
+    const today = new Date().toISOString().split("T")[0];
+    setPurchaseFormData({
+      itemName: product.productName || "",
+      category: product.category || "",
+      quantity: 1,
+      price: product.price?.toString() || "",
+      date: today,
+      shopName: product.shopName || "",
+    });
+    setShowPurchaseForm(true);
+    setShowProductModal(false);
+    setPurchaseFormError("");
+    setPurchaseFormSuccess("");
+  };
+
+  const handlePurchaseFormChange = (e) => {
+    const { name, value } = e.target;
+    setPurchaseFormData({ ...purchaseFormData, [name]: value });
+  };
+
+  const handlePurchaseFormSubmit = async (e) => {
+    e.preventDefault();
+    setPurchaseFormError("");
+    setPurchaseFormSuccess("");
+
+    try {
+      const purchaseData = {
+        id: 0,
+        productName: purchaseFormData.itemName,
+        category: purchaseFormData.category,
+        date: purchaseFormData.date,
+        price: parseFloat(purchaseFormData.price) || 0,
+        quantity: parseInt(purchaseFormData.quantity) || 1,
+        shopName: purchaseFormData.shopName,
+      };
+
+      console.log("Sending purchase data:", purchaseData);
+
+      const response = await api.post(
+        "/PurchasedProduct/AddPurchasedProduct",
+        purchaseData
+      );
+
+      console.log("Purchase response:", response.data);
+
+      if (response.status === 200) {
+        setPurchaseFormSuccess("Product added to purchased list successfully!");
+        setShowPurchaseForm(false);
+        // Reset form
+        setPurchaseFormData({
+          itemName: "",
+          category: "",
+          quantity: 1,
+          price: "",
+          date: "",
+          shopName: "",
+        });
+      } else {
+        throw new Error(
+          response.data.message ||
+            `Failed to add purchase with status: ${response.status}`
+        );
+      }
+    } catch (error) {
+      console.error("Error adding purchase:", error);
+      setPurchaseFormError(
+        error.response?.data?.message ||
+          error.message ||
+          "Failed to add purchase"
+      );
     }
   };
 
@@ -318,13 +407,7 @@ const ProductDetails = () => {
               </button>
               <button
                 className="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-xl shadow transition-all duration-150"
-                onClick={async () => {
-                  await handleViewProduct(
-                    productDetails.id,
-                    productDetails.url
-                  );
-                  setShowProductModal(false);
-                }}
+                onClick={() => handleMarkAsPurchased(productDetails)}
               >
                 <span className="inline-flex items-center gap-2">
                   <svg
@@ -346,6 +429,61 @@ const ProductDetails = () => {
                 Cancel
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {showPurchaseForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 transition-all">
+          <div className="bg-gradient-to-br from-[#232526] to-[#414345] rounded-2xl shadow-2xl p-8 w-full max-w-xs sm:max-w-sm border border-gray-700 relative animate-fadeIn">
+            <button
+              className="absolute top-3 right-3 text-gray-400 hover:text-white transition"
+              onClick={() => setShowPurchaseForm(false)}
+              aria-label="Close"
+            >
+              &times;
+            </button>
+            <h2 className="text-2xl font-extrabold mb-6 text-white tracking-wide">
+              Add to Purchased List
+            </h2>
+            <form
+              onSubmit={handlePurchaseFormSubmit}
+              className="flex flex-col gap-4"
+            >
+              <div>
+                <label
+                  htmlFor="quantity"
+                  className="block text-sm font-medium text-gray-400"
+                >
+                  Quantity
+                </label>
+                <input
+                  type="number"
+                  id="quantity"
+                  name="quantity"
+                  value={purchaseFormData.quantity}
+                  onChange={handlePurchaseFormChange}
+                  className="mt-1 block w-full bg-[#2A2A2A] text-white border-gray-700 rounded-md shadow-sm p-2 focus:border-blue-500 focus:ring-blue-500"
+                  required
+                  min="1"
+                />
+              </div>
+              <button
+                type="submit"
+                className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition-colors"
+              >
+                Add to Purchased List
+              </button>
+            </form>
+            {purchaseFormError && (
+              <div className="text-red-500 mt-2">
+                Error: {purchaseFormError}
+              </div>
+            )}
+            {purchaseFormSuccess && (
+              <div className="text-green-500 mt-2">
+                Success: {purchaseFormSuccess}
+              </div>
+            )}
           </div>
         </div>
       )}
