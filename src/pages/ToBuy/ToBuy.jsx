@@ -382,7 +382,7 @@ const ToBuy = () => {
                       </p>
                       {product.price > 0 && (
                         <p className="text-gray-400 text-sm">
-                          E£${product.price.toFixed(2)}
+                          L.E {product.price.toFixed(2)}
                         </p>
                       )}
                     </div>

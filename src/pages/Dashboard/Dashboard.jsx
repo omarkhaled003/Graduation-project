@@ -22,8 +22,8 @@ const Dashboard = () => {
   const [searchType, setSearchType] = useState("");
   const [editingProductId, setEditingProductId] = useState(null);
   const [editFormData, setEditFormData] = useState({});
-  const [totalExpenses, setTotalExpenses] = useState("EGP 0.000");
-  const [revenueSalary, setRevenueSalary] = useState("EGP 0.000");
+  const [totalExpenses, setTotalExpenses] = useState("L.E 0.000");
+  const [revenueSalary, setRevenueSalary] = useState("L.E 0.000");
   const [lastMonthBillCategories, setLastMonthBillCategories] = useState([]);
   const [financialGoals, setFinancialGoals] = useState({
     salary: 0,
@@ -41,6 +41,8 @@ const Dashboard = () => {
     useState("Food & Groceries");
   const [productSearchStartDate, setProductSearchStartDate] = useState("");
   const [productSearchEndDate, setProductSearchEndDate] = useState("");
+  const [productSearchActive, setProductSearchActive] = useState(false);
+  const [billsSearchActive, setBillsSearchActive] = useState(false);
 
   const applyFiltersToProducts = (products) => {
     return products.filter((product) => {
@@ -97,7 +99,10 @@ const Dashboard = () => {
 
     try {
       const response = await api.get("/PurchasedProduct/GetPurchasedProducts");
-      let productsToFilter = response.data;
+      let productsToFilter = response.data.map((p) => ({
+        ...p,
+        quantity: p.quantity === 0 ? 1 : p.quantity,
+      }));
 
       // Sort products by date in descending order (latest first)
       productsToFilter.sort((a, b) => {
@@ -119,7 +124,7 @@ const Dashboard = () => {
 
   const fetchTotalExpenses = async () => {
     if (!user || !user.token) {
-      setTotalExpenses("EGP 0.000");
+      setTotalExpenses("L.E 0.000");
       return;
     }
     try {
@@ -129,32 +134,32 @@ const Dashboard = () => {
       console.log("Total Expenses API Response (Dashboard):", response.data);
       if (response.data && typeof response.data.totalExpenses === "number") {
         setTotalExpenses(
-          `EGP ${response.data.totalExpenses.toLocaleString("en-US")}`
+          `L.E ${response.data.totalExpenses.toLocaleString("en-US")}`
         );
       } else {
-        setTotalExpenses("EGP 0.000");
+        setTotalExpenses("L.E 0.000");
       }
     } catch (e) {
       console.error("Error fetching total expenses:", e);
-      setTotalExpenses("EGP 0.000");
+      setTotalExpenses("L.E 0.000");
     }
   };
 
   const fetchRevenueSalary = async () => {
     if (!user || !user.token) {
-      setRevenueSalary("EGP 0.000");
+      setRevenueSalary("L.E 0.000");
       return;
     }
     try {
       const response = await api.get("/FinancialGoal/UserFinancialGoal");
       if (response.data && typeof response.data.salary === "number") {
-        setRevenueSalary(`EGP ${response.data.salary.toLocaleString("en-US")}`);
+        setRevenueSalary(`L.E ${response.data.salary.toLocaleString("en-US")}`);
       } else {
-        setRevenueSalary("EGP 0.000");
+        setRevenueSalary("L.E 0.000");
       }
     } catch (e) {
       console.error("Error fetching revenue salary:", e);
-      setRevenueSalary("EGP 0.000");
+      setRevenueSalary("L.E 0.000");
     }
   };
 
@@ -251,9 +256,13 @@ const Dashboard = () => {
       return;
     }
     try {
+      const dataToUpdate = { ...editFormData };
+      if (Number(dataToUpdate.quantity) === 0) {
+        dataToUpdate.quantity = 1;
+      }
       await api.put(
         `/PurchasedProduct/UpdatePurchasedProduct?id=${editingProductId}`,
-        editFormData
+        dataToUpdate
       );
       // Refresh the data immediately after update
       await fetchPurchasedProducts(false);
@@ -279,12 +288,12 @@ const Dashboard = () => {
   };
 
   const formattedSalary = user?.salary
-    ? `EGP ${user.salary.toLocaleString("en-US")}`
-    : "EGP 0.000";
+    ? `L.E ${user.salary.toLocaleString("en-US")}`
+    : "L.E 0.000";
   const totalPoints = "1500";
 
   const numericTotalExpenses = parseFloat(
-    totalExpenses.replace("EGP ", "").replace(/,/g, "")
+    totalExpenses.replace("L.E ", "").replace(/,/g, "")
   );
   const spendingGoal = financialGoals.salary - financialGoals.financialGoal;
   const overBudget = Math.max(0, numericTotalExpenses - spendingGoal);
@@ -323,21 +332,25 @@ const Dashboard = () => {
           "/MonthlyBill/GetLastMonthBillsWithCategories"
         );
         console.log("Bills details API response:", response.data);
-        if (response.data && response.data.categories) {
-          const transformedData = Object.keys(response.data.categories).map(
-            (category) => ({
-              name: category,
-              value: response.data.categories[category],
-              color: monthlyBillCategoryColors[category] || "#CCCCCC", // Use defined color or a default
-            })
-          );
-          setLastMonthBillCategories(transformedData);
-        } else {
-          setLastMonthBillCategories([]);
-        }
+        const apiCategories = response.data?.categories || {};
+        const allCategoryNames = Object.keys(monthlyBillCategoryColors);
+
+        const transformedData = allCategoryNames.map((category) => ({
+          name: category,
+          value: apiCategories[category] || 0,
+          color: monthlyBillCategoryColors[category] || "#CCCCCC",
+        }));
+
+        setLastMonthBillCategories(transformedData);
       } catch (error) {
         console.error("Error fetching last month's bills:", error);
-        setLastMonthBillCategories([]);
+        const allCategoryNames = Object.keys(monthlyBillCategoryColors);
+        const transformedData = allCategoryNames.map((category) => ({
+          name: category,
+          value: 0,
+          color: monthlyBillCategoryColors[category] || "#CCCCCC",
+        }));
+        setLastMonthBillCategories(transformedData);
       }
     };
     fetchLastMonthBills();
@@ -359,6 +372,7 @@ const Dashboard = () => {
   const handleBillsSearch = () => {
     if (!billsSearch.trim() || /^\d+$/.test(billsSearch.trim())) {
       setBillsSearchResults([]);
+      setBillsSearchActive(false);
       return;
     }
     const term = billsSearch.trim().toLowerCase();
@@ -368,6 +382,7 @@ const Dashboard = () => {
         (bill.category && bill.category.toLowerCase().includes(term))
     );
     setBillsSearchResults(filtered);
+    setBillsSearchActive(true);
   };
 
   const handleProductSearch = () => {
@@ -375,6 +390,7 @@ const Dashboard = () => {
     if (productSearchBy === "productName") {
       if (!productSearch.trim()) {
         setProductSearchResults([]);
+        setProductSearchActive(false);
         return;
       }
       const term = productSearch.trim().toLowerCase();
@@ -384,6 +400,7 @@ const Dashboard = () => {
     } else if (productSearchBy === "shopName") {
       if (!productSearch.trim()) {
         setProductSearchResults([]);
+        setProductSearchActive(false);
         return;
       }
       const term = productSearch.trim().toLowerCase();
@@ -397,6 +414,7 @@ const Dashboard = () => {
     } else if (productSearchBy === "dateRange") {
       if (!productSearchStartDate && !productSearchEndDate) {
         setProductSearchResults([]);
+        setProductSearchActive(false);
         return;
       }
       filtered = purchasedProducts.filter((p) => {
@@ -413,6 +431,7 @@ const Dashboard = () => {
         );
       });
     }
+    setProductSearchActive(true);
     setProductSearchResults(filtered);
   };
 
@@ -441,7 +460,7 @@ const Dashboard = () => {
           <div className="flex justify-between gap-4 mt-4">
             {/* Expenses Half */}
             <div className="flex-1 p-2 rounded-md bg-[#2A2A2A] text-center">
-              <p className="text-gray-400 text-sm">Expenses</p>
+              <p className="text-gray-400 text-sm">Spending Limit</p>
               <div
                 className={`${
                   expensesPercentage > 100 ? "text-red-500" : "text-blue-400"
@@ -566,43 +585,39 @@ const Dashboard = () => {
                   </tr>
                 </thead>
                 <tbody className="text-white text-sm font-light">
-                  {(billsSearchResults.length > 0
-                    ? billsSearchResults
-                    : lastFiveBills
-                  ).map((bill) => (
-                    <tr
-                      key={bill.billId}
-                      className="border-b border-gray-600 hover:bg-[#2A2A2A]"
-                    >
-                      <td className="py-3 px-6 text-left">
-                        {bill.issuer || "-"}
-                      </td>
-                      <td className="py-3 px-6 text-left">
-                        {bill.category || "-"}
-                      </td>
-                      <td className="py-3 px-6 text-left">
-                        {bill.amount != null ? `E£${bill.amount}` : "-"}
-                      </td>
-                      <td className="py-3 px-6 text-left">
-                        {bill.startDate
-                          ? new Date(bill.startDate).toLocaleDateString()
-                          : "-"}
-                      </td>
-                      <td className="py-3 px-6 text-left">
-                        {bill.endDate
-                          ? new Date(bill.endDate).toLocaleDateString()
-                          : "-"}
-                      </td>
-                    </tr>
-                  ))}
+                  {(billsSearchActive ? billsSearchResults : lastFiveBills).map(
+                    (bill) => (
+                      <tr
+                        key={bill.billId}
+                        className="border-b border-gray-600 hover:bg-[#2A2A2A]"
+                      >
+                        <td className="py-3 px-6 text-left">
+                          {bill.issuer || "-"}
+                        </td>
+                        <td className="py-3 px-6 text-left">
+                          {bill.category || "-"}
+                        </td>
+                        <td className="py-3 px-6 text-left">
+                          {bill.amount != null ? `L.E ${bill.amount}` : "-"}
+                        </td>
+                        <td className="py-3 px-6 text-left">
+                          {bill.startDate
+                            ? new Date(bill.startDate).toLocaleDateString()
+                            : "-"}
+                        </td>
+                        <td className="py-3 px-6 text-left">
+                          {bill.endDate
+                            ? new Date(bill.endDate).toLocaleDateString()
+                            : "-"}
+                        </td>
+                      </tr>
+                    )
+                  )}
                 </tbody>
               </table>
-              {(billsSearchResults.length > 0
-                ? billsSearchResults
-                : lastFiveBills
-              ).length === 0 && (
+              {billsSearchActive && billsSearchResults.length === 0 && (
                 <div className="text-gray-400 text-center py-4">
-                  No bills found.
+                  No bills found for your search.
                 </div>
               )}
             </div>
@@ -702,7 +717,7 @@ const Dashboard = () => {
               </tr>
             </thead>
             <tbody className="text-white text-sm font-light">
-              {(productSearchResults.length > 0
+              {(productSearchActive
                 ? productSearchResults
                 : lastFiveProducts
               ).map((product) => (
@@ -732,6 +747,7 @@ const Dashboard = () => {
                         value={editFormData.quantity || 1}
                         onChange={handleFormChange}
                         className="p-1 rounded bg-[#232323] text-white w-16"
+                        min="1"
                       />
                     ) : (
                       product.quantity
@@ -748,7 +764,7 @@ const Dashboard = () => {
                         className="p-1 rounded bg-[#232323] text-white w-20"
                       />
                     ) : (
-                      `E£${product.price.toFixed(2)}`
+                      `L.E ${product.price.toFixed(2)}`
                     )}
                   </td>
                   <td className="py-3 px-4 text-left">
@@ -842,12 +858,9 @@ const Dashboard = () => {
               ))}
             </tbody>
           </table>
-          {(productSearchResults.length > 0
-            ? productSearchResults
-            : lastFiveProducts
-          ).length === 0 && (
+          {productSearchActive && productSearchResults.length === 0 && (
             <div className="text-gray-400 text-center py-4">
-              No products found.
+              No products found for your search.
             </div>
           )}
         </div>

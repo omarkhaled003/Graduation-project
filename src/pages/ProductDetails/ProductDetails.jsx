@@ -243,11 +243,16 @@ const ProductDetails = () => {
                               if (label) {
                                 label += ": ";
                               }
-                              if (context.parsed.y !== null) {
-                                label += new Intl.NumberFormat("en-US", {
-                                  style: "currency",
-                                  currency: "EGP",
-                                }).format(context.parsed.y);
+                              if (
+                                context.dataset.label &&
+                                context.parsed.y !== null
+                              ) {
+                                label +=
+                                  "L.E " +
+                                  context.parsed.y.toLocaleString("en-US", {
+                                    minimumFractionDigits: 2,
+                                    maximumFractionDigits: 2,
+                                  });
                               }
                               return label;
                             },
