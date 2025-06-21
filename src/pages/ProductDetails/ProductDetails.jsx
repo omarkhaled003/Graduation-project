@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
 import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -45,25 +44,7 @@ const ProductDetails = () => {
   const [purchaseFormError, setPurchaseFormError] = useState("");
   const [purchaseFormSuccess, setPurchaseFormSuccess] = useState("");
 
-  const categories = ["Clothes", "Electronics", "Food & Groceries", "Other"];
-
-  const api = axios.create({
-    baseURL: "/api",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-    timeout: 60000, // Increased timeout
-  });
-
-  // Add request interceptor to add token to all requests
-  api.interceptors.request.use((config) => {
-    const user = JSON.parse(localStorage.getItem("user"));
-    if (user?.token) {
-      config.headers.Authorization = `Bearer ${user.token}`;
-    }
-    return config;
-  });
+  const categories = ["Clothes", "Electronics", "Food & Groceries", " Other"];
 
   useEffect(() => {
     const fetchProductDetails = async () => {
@@ -128,9 +109,15 @@ const ProductDetails = () => {
   const handleMarkAsPurchased = (product) => {
     // Pre-fill the form with product data and today's date
     const today = new Date().toISOString().split("T")[0];
+
+    // Ensure category is one of the valid options
+    const productCategory = categories.includes(product.category)
+      ? product.category
+      : " Other";
+
     setPurchaseFormData({
       itemName: product.productName || "",
-      category: product.category || "",
+      category: productCategory,
       quantity: 1,
       price: product.price?.toString() || "",
       date: today,
