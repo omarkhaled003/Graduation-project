@@ -98,7 +98,7 @@ const Notifications = () => {
   if (loading) {
     console.log("Rendering loading state");
     return (
-      <div className="p-4 md:p-6 bg-[#121212] min-h-screen text-white">
+      <div className="p-4 md:p-8 min-h-screen bg-[#121212] text-white">
         <div className="text-center py-8">Loading notifications...</div>
       </div>
     );
@@ -107,7 +107,7 @@ const Notifications = () => {
   if (error) {
     console.log("Rendering error state:", error);
     return (
-      <div className="p-4 md:p-6 bg-[#121212] min-h-screen text-white">
+      <div className="p-4 md:p-8 min-h-screen bg-[#121212] text-white">
         <div className="text-red-500 text-center py-8">{error}</div>
       </div>
     );
@@ -115,70 +115,76 @@ const Notifications = () => {
 
   console.log("Rendering main view with alerts:", alerts);
   return (
-    <div className="p-4 md:p-6 bg-[#121212] min-h-screen text-white">
-      {alerts.length === 0 ? (
-        <div className="text-center py-8 text-gray-400">
-          No notifications available
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {alerts.map((alert) => {
-            console.log("Rendering alert:", alert);
-            const alertDate = new Date(alert.date);
-            const isValidDate = !isNaN(alertDate.getTime());
+    <div className="p-4 md:p-8 min-h-screen bg-[#121212] text-white">
+      <h1 className="text-2xl md:text-3xl font-bold mb-6">Notifications</h1>
+      <div className="bg-[#18181b] rounded-xl p-4 mb-4 w-full max-w-full">
+        {alerts.length === 0 ? (
+          <div className="text-center py-8 text-gray-400">
+            No notifications available
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {alerts.map((alert) => {
+              console.log("Rendering alert:", alert);
+              const alertDate = new Date(alert.date);
+              const isValidDate = !isNaN(alertDate.getTime());
 
-            const displayDate = isValidDate
-              ? `${alertDate.toLocaleDateString()} ${alertDate.toLocaleTimeString()}`
-              : "Date Unavailable";
+              const displayDate = isValidDate
+                ? `${alertDate.toLocaleDateString()} ${alertDate.toLocaleTimeString()}`
+                : "Date Unavailable";
 
-            let iconComponent = <FiInfo className="text-blue-400 text-2xl" />;
-            let borderColorClass = "border-blue-500"; // Default info color
+              let iconComponent = <FiInfo className="text-blue-400 text-2xl" />;
+              let borderColorClass = "border-blue-500"; // Default info color
 
-            // Assuming 'type' field in alert object indicates the type of alert
-            if (alert.type === 100) {
-              // Example: spending limit alert
-              iconComponent = (
-                <FiAlertCircle className="text-red-500 text-2xl" />
-              );
-              borderColorClass = "border-red-500";
-            }
+              // Assuming 'type' field in alert object indicates the type of alert
+              if (alert.type === 100) {
+                // Example: spending limit alert
+                iconComponent = (
+                  <FiAlertCircle className="text-red-500 text-2xl" />
+                );
+                borderColorClass = "border-red-500";
+              }
 
-            return (
-              <div
-                key={alert.id}
-                className={`flex items-start bg-[#1E1E1E] rounded-xl p-4 shadow-md hover:bg-[#2A2A2A] transition-colors border-l-4 ${borderColorClass}`}
-              >
-                <div className="flex-shrink-0 mr-4 mt-1">{iconComponent}</div>
-                <div className="flex-grow">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="text-lg font-semibold mb-1 text-white">
-                        {alert.title}
-                      </h3>
-                      <p className="text-gray-300 text-sm">{alert.message}</p>
+              return (
+                <div
+                  key={alert.id}
+                  className={`flex items-start bg-[#1E1E1E] rounded-xl p-4 shadow-md hover:bg-[#2A2A2A] transition-colors border-l-4 ${borderColorClass}`}
+                >
+                  <div className="flex-shrink-0 mr-4 mt-1">{iconComponent}</div>
+                  <div className="flex-grow">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="text-lg font-semibold mb-1 text-white">
+                          {alert.title}
+                        </h3>
+                        <p className="text-gray-300 text-sm">{alert.message}</p>
+                      </div>
+                      <span className="text-xs text-gray-500 flex-shrink-0 ml-4">
+                        {displayDate}
+                      </span>
                     </div>
-                    <span className="text-xs text-gray-500 flex-shrink-0 ml-4">
-                      {displayDate}
-                    </span>
+                    {alert.productId && (
+                      <button
+                        onClick={() => {
+                          console.log(
+                            "Navigating to product:",
+                            alert.productId
+                          );
+                          navigate(`/product-details/${alert.productId}`);
+                        }}
+                        className="mt-3 text-blue-400 hover:text-blue-300 text-sm inline-flex items-center"
+                      >
+                        View Product Details
+                        <FiArrowLeft className="ml-1 rotate-180" />
+                      </button>
+                    )}
                   </div>
-                  {alert.productId && (
-                    <button
-                      onClick={() => {
-                        console.log("Navigating to product:", alert.productId);
-                        navigate(`/product-details/${alert.productId}`);
-                      }}
-                      className="mt-3 text-blue-400 hover:text-blue-300 text-sm inline-flex items-center"
-                    >
-                      View Product Details
-                      <FiArrowLeft className="ml-1 rotate-180" />
-                    </button>
-                  )}
                 </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

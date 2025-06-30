@@ -92,7 +92,7 @@ export default function Chatbot({ isOpen, toggleChatbot }) {
     <>
       {/* Chat Window */}
       {isOpen && (
-        <div className="fixed bottom-24 right-6 w-96 h-[500px] bg-gradient-to-b from-[#1E1E1E] to-[#2A2A2A] rounded-2xl shadow-2xl flex flex-col z-50 border border-gray-700/50 overflow-hidden">
+        <div className="fixed bottom-24 right-4 w-full max-w-xs h-96 md:w-96 md:h-[500px] bg-gradient-to-b from-[#1E1E1E] to-[#2A2A2A] rounded-2xl shadow-2xl flex flex-col z-50 border border-gray-700/50 overflow-hidden">
           {/* Header */}
           <div className="p-4 bg-gradient-to-r from-blue-600 to-blue-700 flex justify-between items-center">
             <div className="flex items-center space-x-3">
@@ -170,15 +170,6 @@ export default function Chatbot({ isOpen, toggleChatbot }) {
           </form>
         </div>
       )}
-
-      {/* Chat Button */}
-      <button
-        onClick={toggleChatbot}
-        className="fixed bottom-6 right-6 bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4 rounded-full shadow-lg hover:opacity-90 transition-opacity z-50 group"
-        title="Open Chatbot"
-      >
-        <FiMessageCircle className="w-6 h-6 group-hover:scale-110 transition-transform" />
-      </button>
     </>
   );
 }

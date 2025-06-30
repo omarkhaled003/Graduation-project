@@ -436,8 +436,9 @@ const Dashboard = () => {
   };
 
   return (
-    <>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
+    <div className="w-full max-w-full px-2 sm:px-4 md:px-8 mx-auto">
+      {/* Responsive grid for top cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
         {/* To Buy Card */}
       </div>
 
@@ -482,9 +483,12 @@ const Dashboard = () => {
       </div>
 
       {/* Charts and Latest Orders Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 w-full mt-4">
         {/* Donut Chart Section */}
-        <div className="bg-[#1E1E1E] rounded-xl p-4 md:p-6">
+        <div
+          className="bg-[#1E1E1E] rounded-xl p-4 md:p-6 relative"
+          style={{ minHeight: 340 }}
+        >
           <div className="flex justify-between items-center mb-4">
             <div>
               <h2 className="text-white text-xl font-semibold">
@@ -495,7 +499,7 @@ const Dashboard = () => {
               </div>
             </div>
           </div>
-          <div className="h-[250px] flex flex-col items-center">
+          <div className="h-[250px] flex flex-col items-center pb-16">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -527,7 +531,9 @@ const Dashboard = () => {
                 </text>
               </PieChart>
             </ResponsiveContainer>
-            <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 mt-4 text-sm">
+          </div>
+          <div className="absolute bottom-0 left-0 w-full px-4 pb-4">
+            <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 text-xs sm:text-sm">
               {lastMonthBillCategories.map((category, index) => (
                 <div
                   key={index}
@@ -573,7 +579,7 @@ const Dashboard = () => {
               </div>
             </div>
             {/* Table format for bills */}
-            <div className="overflow-x-auto rounded-b-lg">
+            <div className="overflow-x-auto w-full">
               <table className="min-w-full bg-[#1E1E1E] rounded-lg overflow-hidden">
                 <thead>
                   <tr className="bg-[#2A2A2A] text-gray-400 uppercase text-sm leading-normal">
@@ -703,8 +709,8 @@ const Dashboard = () => {
           </button>
         </div>
         {/* Table */}
-        <div className="w-full">
-          <table className="w-full bg-[#1E1E1E] rounded-lg">
+        <div className="overflow-x-auto w-full">
+          <table className="min-w-full bg-[#1E1E1E] rounded-lg overflow-hidden text-xs sm:text-sm">
             <thead>
               <tr className="bg-[#2A2A2A] text-gray-400 uppercase text-sm leading-normal">
                 <th className="py-3 px-4 text-left">Product Name</th>
@@ -865,7 +871,7 @@ const Dashboard = () => {
           )}
         </div>
       </div>
-    </>
+    </div>
   );
 };
 

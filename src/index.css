@@ -5,6 +5,7 @@
 html,
 body {
   background-color: #121212;
+  overflow-x: hidden;
 }
 
 /* Dark scrollbar styling */
@@ -25,5 +26,6 @@ body {
 * {
   scrollbar-width: thin;
   scrollbar-color: #444 #222;
+  box-sizing: border-box;
 }
 

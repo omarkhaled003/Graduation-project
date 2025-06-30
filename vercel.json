@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://ecofy.salmonpond-551ebfc8.italynorth.azurecontainerapps.io/api/:path*"
+      "destination": "https://ecofy.yellowground-44551b7b.italynorth.azurecontainerapps.io/api/:path*"
     },
     {
       "source": "/(.*)",

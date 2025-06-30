@@ -8,7 +8,7 @@ import clsx from "clsx";
 import { useContext } from "react";
 import UserInfoContext from "../Context/User/UserInfoContext";
 
-const Navbar = ({ className }) => {
+const Navbar = ({ className, mobile }) => {
   const location = useLocation();
   const { user } = useContext(UserInfoContext);
   console.log("[Navbar] user:", user);
@@ -16,6 +16,7 @@ const Navbar = ({ className }) => {
   return (
     <nav
       className={clsx(
+        mobile ? "block md:hidden" : "hidden md:block",
         "fixed left-0 top-0 h-screen w-64 bg-[#1a1a1a] text-gray-300 p-4 !z-[9999]",
         className
       )}

@@ -257,7 +257,7 @@ const ToBuy = () => {
   };
 
   return (
-    <>
+    <div className="p-4 md:p-8 space-y-6 min-h-screen bg-[#121212] text-white">
       {loading && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-75 z-[1000]">
           <div className="animate-spin rounded-full h-20 w-20 border-t-4 border-b-4 border-blue-500"></div>
@@ -265,16 +265,16 @@ const ToBuy = () => {
         </div>
       )}
       {/* Main Content */}
-      <div className="flex-1 p-4 md:p-6 space-y-6">
-        {/* Search and Add Section */}
-        <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+      <div className="w-full max-w-full px-0 sm:px-4 md:px-8 overflow-x-hidden">
+        {/* Responsive header and search/add item row */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-2 mb-4 w-full">
           <h1 className="text-white text-3xl font-bold">To Buy List</h1>
           <div className="flex space-x-4">
             <div className="relative w-full sm:w-auto">
               <input
                 type="text"
                 placeholder="Search..."
-                className="bg-[#1E1E1E] text-white rounded-lg pl-10 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
+                className="bg-[#1E1E1E] text-white rounded-lg pr-10 sm:pl-10 pl-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyPress={(e) => {
@@ -283,7 +283,10 @@ const ToBuy = () => {
                   }
                 }}
               />
-              <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              {/* Icon on right for mobile, left for sm+; slightly lower on mobile */}
+              <div className="absolute top-3 right-3 sm:inset-y-0 sm:left-3 sm:right-auto sm:flex sm:items-center">
+                <FiSearch className="text-gray-400" />
+              </div>
             </div>
             {searchQuery && (
               <button
@@ -349,9 +352,9 @@ const ToBuy = () => {
           </div>
         )}
 
-        {/* Products List */}
-        <div className="bg-[#1E1E1E] rounded-xl p-4 md:p-6">
-          <h2 className="text-white text-xl font-semibold mb-4">
+        {/* Product list card styled as a Reports card */}
+        <div className="bg-[#18181b] rounded-xl p-4 mb-4 w-full max-w-full">
+          <h2 className="text-white text-lg font-semibold mb-4">
             Your Products
           </h2>
           {loading ? (
@@ -361,42 +364,34 @@ const ToBuy = () => {
           ) : products.length === 0 ? (
             <p className="text-gray-400">No products in your list.</p>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-4 w-full">
               {currentProducts.map((product) => (
-                <div
-                  key={product.id}
-                  className="flex items-center justify-between p-3 bg-[#2A2A2A] rounded-lg"
-                >
-                  <div className="flex items-center space-x-4">
+                <div className="flex items-center justify-between gap-2 p-3 bg-[#18181b] border border-[#232323] rounded-2xl shadow-sm mb-3">
+                  {/* Product Image */}
+                  <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center overflow-hidden">
                     <img
                       src={product.thumbnail}
                       alt={product.title}
-                      className="w-16 h-16 object-cover rounded-lg"
+                      className="w-8 h-8 object-contain"
                     />
-                    <div>
-                      <h3 className="text-white font-medium">
-                        {product.title}
-                      </h3>
-                      <p className="text-gray-400 text-sm">
-                        {product.category}
-                      </p>
-                      {product.price > 0 && (
-                        <p className="text-gray-400 text-sm">
-                          L.E {product.price.toFixed(2)}
-                        </p>
-                      )}
+                  </div>
+                  {/* Product Info */}
+                  <div className="flex-1 min-w-0 ml-2">
+                    <div className="font-bold text-white text-sm truncate">
+                      {product.title}
                     </div>
                   </div>
-                  <div className="flex items-center space-x-3">
+                  {/* Action Buttons */}
+                  <div className="flex flex-col sm:flex-row gap-2 ml-2">
                     <button
                       onClick={() => navigate(`/best-price/${product.id}`)}
-                      className="bg-blue-600 text-white px-3 py-1 rounded-lg text-sm hover:bg-blue-700 transition-colors"
+                      className="bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-full px-3 py-1 text-sm"
                     >
-                      View Best Price
+                      View
                     </button>
                     <button
                       onClick={() => removeProduct(product.id)}
-                      className="bg-red-600 text-white px-3 py-1 rounded-lg text-sm hover:bg-red-700 transition-colors"
+                      className="bg-red-600 hover:bg-red-700 text-white font-semibold rounded-full px-3 py-1 text-sm"
                     >
                       Remove
                     </button>
@@ -405,10 +400,12 @@ const ToBuy = () => {
               ))}
             </div>
           )}
+        </div>
 
-          {/* Pagination */}
+        {/* Pagination (if present) */}
+        <div className="flex justify-center mt-4 w-full overflow-x-auto">
           {totalPages > 1 && (
-            <div className="flex justify-center items-center space-x-2 mt-6">
+            <div className="flex justify-center items-center space-x-2">
               <button
                 onClick={() => handlePageChange(currentPage - 1)}
                 disabled={currentPage === 1}
@@ -440,7 +437,7 @@ const ToBuy = () => {
           )}
         </div>
       </div>
-    </>
+    </div>
   );
 };
 

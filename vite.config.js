@@ -7,7 +7,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'https://ecofy.salmonpond-551ebfc8.italynorth.azurecontainerapps.io',
+        target: 'https://ecofy.yellowground-44551b7b.italynorth.azurecontainerapps.io',
         changeOrigin: true,
         secure: false,
         rewrite: (path) => path,
@@ -16,7 +16,7 @@ export default defineConfig({
             console.log('proxy error', err);
           });
           proxy.on('proxyReq', (proxyReq, req, _res) => {
-            proxyReq.setHeader('Origin', 'https://ecofy.salmonpond-551ebfc8.italynorth.azurecontainerapps.io');
+            proxyReq.setHeader('Origin', 'https://ecofy.yellowground-44551b7b.italynorth.azurecontainerapps.io');
             proxyReq.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
             proxyReq.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization');
             console.log('Sending Request:', req.method, req.url);

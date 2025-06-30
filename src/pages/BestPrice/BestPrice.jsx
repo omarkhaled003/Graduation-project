@@ -75,58 +75,62 @@ const BestPrice = () => {
 
   return (
     <div className="p-4 md:p-6 space-y-6 bg-[#121212] min-h-screen text-white">
-      <h1 className="text-3xl font-bold mb-4">Best Prices Overview</h1>
-      {bestPriceData && bestPriceData.length > 0 ? (
-        <div className="space-y-6">
-          {bestPriceData
-            .filter((product) => product.price > 0)
-            .map((product) => (
-              <div
-                key={product.id}
-                className="bg-[#1E1E1E] rounded-xl p-4 md:p-6 shadow-md flex flex-col sm:flex-row gap-6"
-              >
-                {product.image && (
-                  <img
-                    src={product.image}
-                    alt={product.productName}
-                    className="w-full sm:w-1/3 h-48 object-contain rounded-lg bg-[#1E1E1E] p-2 shadow-md"
-                  />
-                )}
-                <div className="flex-1 space-y-3">
-                  <h2 className="text-2xl font-semibold">
-                    {product.productName}
-                  </h2>
-                  <p className="text-gray-400">
-                    {product.description || "No description available."}
-                  </p>
+      <h1 className="text-2xl md:text-3xl font-bold mb-4">
+        Best Prices Overview
+      </h1>
+      <div className="bg-[#18181b] rounded-xl p-4 mb-4 w-full max-w-full">
+        {bestPriceData && bestPriceData.length > 0 ? (
+          <div className="space-y-6">
+            {bestPriceData
+              .filter((product) => product.price > 0)
+              .map((product) => (
+                <div
+                  key={product.id}
+                  className="bg-[#1E1E1E] rounded-xl p-4 md:p-6 shadow-md flex flex-col sm:flex-row gap-6"
+                >
+                  {product.image && (
+                    <img
+                      src={product.image}
+                      alt={product.productName}
+                      className="w-full sm:w-1/3 h-48 object-contain rounded-lg bg-[#1E1E1E] p-2 shadow-md"
+                    />
+                  )}
+                  <div className="flex-1 space-y-3">
+                    <h2 className="text-2xl font-semibold">
+                      {product.productName}
+                    </h2>
+                    <p className="text-gray-400">
+                      {product.description || "No description available."}
+                    </p>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-gray-400">Price:</p>
-                      <p className="text-xl font-bold text-blue-400">
-                        L.E. {product.price?.toFixed(2) || "N/A"}
-                      </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-gray-400">Price:</p>
+                        <p className="text-xl font-bold text-blue-400">
+                          L.E. {product.price?.toFixed(2) || "N/A"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-gray-400">Store:</p>
+                        <p className="text-xl font-bold">
+                          {product.shopName || "N/A"}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-gray-400">Store:</p>
-                      <p className="text-xl font-bold">
-                        {product.shopName || "N/A"}
-                      </p>
-                    </div>
+                    <button
+                      onClick={() => navigate(`/product-details/${product.id}`)}
+                      className="mt-4 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors text-sm"
+                    >
+                      Details
+                    </button>
                   </div>
-                  <button
-                    onClick={() => navigate(`/product-details/${product.id}`)}
-                    className="mt-4 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors text-sm"
-                  >
-                    Details
-                  </button>
                 </div>
-              </div>
-            ))}
-        </div>
-      ) : (
-        <p>No best price found for this product.</p>
-      )}
+              ))}
+          </div>
+        ) : (
+          <p>No best price found for this product.</p>
+        )}
+      </div>
       <button
         onClick={() => navigate(-1)}
         className="mt-6 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"

@@ -135,7 +135,11 @@ const UserInfo = ({ user }) => {
             "U"
           )}
         </div>
-        <span className="hidden sm:inline">
+        {/* Show name on all screens, make it clickable on mobile to toggle dropdown */}
+        <span
+          className="block sm:inline cursor-pointer"
+          onClick={() => setDropdownOpen(!dropdownOpen)}
+        >
           {userName || user?.email || "User"}
         </span>
         {/* Salary display with AI suggestion button */}

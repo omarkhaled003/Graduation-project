@@ -81,9 +81,9 @@ export default function Login() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen">
-      <div className="bg-[#1E1E1E] p-8 rounded-lg shadow-md w-full max-w-sm mx-auto">
-        <h2 className="text-2xl font-bold text-white mb-8 text-center">
+    <div className="flex items-center justify-center min-h-screen p-4">
+      <div className="bg-[#18181b] rounded-xl p-4 mb-4 w-full max-w-full">
+        <h2 className="text-2xl md:text-3xl font-bold text-white mb-8 text-center">
           Login
         </h2>
         {error && (

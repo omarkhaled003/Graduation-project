@@ -5,7 +5,8 @@ import axios from "axios";
 
 // Create axios instance with default config
 const api = axios.create({
-  baseURL: "https://ecofy.salmonpond-551ebfc8.italynorth.azurecontainerapps.io",
+  baseURL:
+    "https://ecofy.yellowground-44551b7b.italynorth.azurecontainerapps.io",
   headers: {
     "Content-Type": "application/json",
     Accept: "application/json",
@@ -113,12 +114,12 @@ function SignUp() {
   };
 
   return (
-    <div className="w-full">
-      <div className="bg-[#1a1a1a] p-8 rounded-xl shadow-2xl">
+    <div className="flex items-center justify-center min-h-screen p-4">
+      <div className="bg-[#18181b] rounded-xl p-4 mb-4 w-full max-w-full">
+        <h2 className="text-2xl md:text-3xl font-bold text-white mb-8 text-center">
+          Sign Up
+        </h2>
         <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-white">
-            Create Account
-          </h2>
           <p className="mt-2 text-center text-sm text-gray-400">
             Join us and start managing your tasks
           </p>
@@ -225,6 +226,11 @@ function SignUp() {
                   </button>
                 </div>
               </div>
+              {/* Password requirements note */}
+              <p className="text-xs text-gray-400 mt-1 text-left">
+                Password must contain at least one capital letter, one special
+                character (like @), and one number.
+              </p>
             </div>
 
             {/* Confirm Password Input */}

@@ -197,7 +197,7 @@ const ProductDetails = () => {
 
   return (
     <div className="p-4 md:p-6 space-y-6 bg-[#121212] min-h-screen text-white">
-      <h1 className="text-3xl font-bold mb-4">Product Details</h1>
+      <h1 className="text-2xl md:text-3xl font-bold mb-4">Product Details</h1>
       {viewProductMessage && (
         <div
           className={`mb-4 p-2 rounded ${
@@ -210,13 +210,13 @@ const ProductDetails = () => {
         </div>
       )}
       {productDetails ? (
-        <div className="bg-[#1E1E1E] rounded-xl p-4 md:p-6 shadow-md flex flex-col sm:flex-row gap-6">
+        <div className="bg-[#18181b] rounded-xl p-4 mb-4 w-full max-w-full">
           <div className="flex-shrink-0">
             {productDetails.image && (
               <img
                 src={productDetails.image}
                 alt={productDetails.productName}
-                className="w-full max-w-xs h-auto object-contain rounded-lg mb-4 bg-[#1E1E1E] p-2 shadow-md"
+                className="mx-auto w-40 sm:w-60 md:w-80 h-auto object-contain rounded-lg mb-4 bg-[#1E1E1E] p-2 shadow-md"
               />
             )}
           </div>

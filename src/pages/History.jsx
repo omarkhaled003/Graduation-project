@@ -312,400 +312,402 @@ const History = () => {
 
   return (
     <>
-      <div className="flex-1 p-4 md:p-6 space-y-6">
-        <h2 className="text-2xl font-semibold mb-6 text-center text-white">
-          Add Item Purchased
-        </h2>
-
-        {/* Toggle Buttons */}
-        <div className="flex justify-center mb-6 space-x-4">
-          <button
-            onClick={() => setActiveView("scanReceipt")}
-            className={`px-6 py-2 rounded-lg text-white font-medium transition-colors ${
-              activeView === "scanReceipt"
-                ? "bg-blue-600 hover:bg-blue-700"
-                : "bg-gray-700 hover:bg-gray-600"
-            }`}
-          >
-            Scan Receipt
-          </button>
-          <button
-            onClick={() => setActiveView("form")}
-            className={`px-6 py-2 rounded-lg text-white font-medium transition-colors ${
-              activeView === "form"
-                ? "bg-blue-600 hover:bg-blue-700"
-                : "bg-gray-700 hover:bg-gray-600"
-            }`}
-          >
-            Manual Form
-          </button>
-          <button
-            onClick={() => setActiveView("monthlyBill")}
-            className={`px-6 py-2 rounded-lg text-white font-medium transition-colors ${
-              activeView === "monthlyBill"
-                ? "bg-blue-600 hover:bg-blue-700"
-                : "bg-gray-700 hover:bg-gray-600"
-            }`}
-          >
-            Add Monthly Bill
-          </button>
-        </div>
-
-        {/* Error Display */}
-        {error && (
-          <div className="bg-red-500/10 border border-red-500 text-red-500 px-4 py-2 rounded-md">
-            {error}
-          </div>
-        )}
-
-        {success && (
-          <div className="bg-green-500/10 border border-green-500 text-green-500 px-4 py-2 rounded-md">
-            {success}
-          </div>
-        )}
-
-        <div className="flex flex-col lg:flex-row gap-12 mx-auto items-center lg:items-start lg:justify-center max-w-screen-lg">
-          {/* Form Section */}
-          <form onSubmit={handleSubmit} className="space-y-6 w-full lg:w-1/2">
-            {activeView === "scanReceipt" && (
-              // Image Upload Section
-              <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-gray-700 rounded-lg cursor-pointer bg-[#2A2A2A] hover:bg-[#3A3A3A] transition-colors">
-                <label htmlFor="receiptImage" className="text-center">
-                  <FiUploadCloud className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-                  <p className="text-white mb-1">
-                    {formData.receiptImage
-                      ? formData.receiptImage.name
-                      : "Drag & drop your receipt here, or click to browse"}
-                  </p>
-                  <p className="text-gray-400 text-sm mb-2">
-                    (Receipts must be in English)
-                  </p>
-                  <input
-                    type="file"
-                    id="receiptImage"
-                    name="receiptImage"
-                    accept="image/*"
-                    onChange={handleFileChange}
-                    className="hidden"
-                  />
-                </label>
-              </div>
-            )}
-
-            {activeView === "form" && (
-              // Manual Form Fields
-              <>
-                <div>
-                  <label
-                    htmlFor="itemName"
-                    className="block text-sm font-medium text-gray-400"
-                  >
-                    Item Name
-                  </label>
-                  <input
-                    type="text"
-                    id="itemName"
-                    name="itemName"
-                    value={formData.itemName}
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full bg-[#2A2A2A] text-white border-gray-700 rounded-md shadow-sm p-2 focus:border-blue-500 focus:ring-blue-500"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="category"
-                    className="block text-sm font-medium text-gray-400"
-                  >
-                    Category
-                  </label>
-                  <select
-                    id="category"
-                    name="category"
-                    value={formData.category}
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full bg-[#2A2A2A] text-white border-gray-700 rounded-md shadow-sm p-2 focus:border-blue-500 focus:ring-blue-500"
-                    required
-                  >
-                    <option value="">Select a category</option>
-                    {categories.map((category) => (
-                      <option key={category} value={category}>
-                        {category}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label
-                      htmlFor="quantity"
-                      className="block text-sm font-medium text-gray-400"
-                    >
-                      Quantity
-                    </label>
-                    <input
-                      type="number"
-                      id="quantity"
-                      name="quantity"
-                      value={formData.quantity}
-                      onChange={handleInputChange}
-                      className="mt-1 block w-full bg-[#2A2A2A] text-white border-gray-700 rounded-md shadow-sm p-2 focus:border-blue-500 focus:ring-blue-500"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label
-                      htmlFor="price"
-                      className="block text-sm font-medium text-gray-400"
-                    >
-                      Price (L.E.)
-                    </label>
-                    <input
-                      type="number"
-                      id="price"
-                      name="price"
-                      value={formData.price}
-                      onChange={handleInputChange}
-                      className="mt-1 block w-full bg-[#2A2A2A] text-white border-gray-700 rounded-md shadow-sm p-2 focus:border-blue-500 focus:ring-blue-500"
-                      step="0.01"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="date"
-                    className="block text-sm font-medium text-gray-400"
-                  >
-                    Date
-                  </label>
-                  <div className="relative mt-1 rounded-md shadow-sm">
-                    <input
-                      type="date"
-                      id="date"
-                      name="date"
-                      value={formData.date}
-                      onChange={handleInputChange}
-                      className="block w-full bg-[#2A2A2A] text-white border-gray-700 rounded-md p-2 pl-10 focus:border-blue-500 focus:ring-blue-500"
-                      required
-                    />
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <FiCalendar className="h-5 w-5 text-gray-400" />
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="shopName"
-                    className="block text-sm font-medium text-gray-400"
-                  >
-                    Shop Name
-                  </label>
-                  <input
-                    type="text"
-                    id="shopName"
-                    name="shopName"
-                    value={formData.shopName}
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full bg-[#2A2A2A] text-white border-gray-700 rounded-md shadow-sm p-2 focus:border-blue-500 focus:ring-blue-500"
-                    required
-                  />
-                </div>
-              </>
-            )}
-
-            {activeView === "monthlyBill" && (
-              // Monthly Bill Form Fields (Placeholder)
-              <>
-                <div>
-                  <label
-                    htmlFor="name"
-                    className="block text-sm font-medium text-gray-400"
-                  >
-                    Bill Name
-                  </label>
-                  <input
-                    type="text"
-                    id="name"
-                    name="name"
-                    value={monthlyBillData.name}
-                    onChange={(e) =>
-                      setMonthlyBillData({
-                        ...monthlyBillData,
-                        name: e.target.value,
-                      })
-                    }
-                    className="mt-1 block w-full bg-[#2A2A2A] text-white border-gray-700 rounded-md shadow-sm p-2 focus:border-blue-500 focus:ring-blue-500"
-                    required
-                  />
-                </div>
-                <div>
-                  <label
-                    htmlFor="issuer"
-                    className="block text-sm font-medium text-gray-400"
-                  >
-                    Issuer
-                  </label>
-                  <input
-                    type="text"
-                    id="issuer"
-                    name="issuer"
-                    value={monthlyBillData.issuer}
-                    onChange={(e) =>
-                      setMonthlyBillData({
-                        ...monthlyBillData,
-                        issuer: e.target.value,
-                      })
-                    }
-                    className="mt-1 block w-full bg-[#2A2A2A] text-white border-gray-700 rounded-md shadow-sm p-2 focus:border-blue-500 focus:ring-blue-500"
-                    required
-                  />
-                </div>
-                <div>
-                  <label
-                    htmlFor="category"
-                    className="block text-sm font-medium text-gray-400"
-                  >
-                    Category
-                  </label>
-                  <select
-                    id="category"
-                    name="category"
-                    value={monthlyBillData.category}
-                    onChange={(e) =>
-                      setMonthlyBillData({
-                        ...monthlyBillData,
-                        category: e.target.value,
-                      })
-                    }
-                    className="mt-1 block w-full bg-[#2A2A2A] text-white border-gray-700 rounded-md shadow-sm p-2 focus:border-blue-500 focus:ring-blue-500"
-                    required
-                  >
-                    <option value="">Select a category</option>
-                    {monthlyBillCategories.map((category) => (
-                      <option key={category} value={category}>
-                        {category}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label
-                    htmlFor="amount"
-                    className="block text-sm font-medium text-gray-400"
-                  >
-                    Amount
-                  </label>
-                  <input
-                    type="number"
-                    id="amount"
-                    name="amount"
-                    value={monthlyBillData.amount}
-                    onChange={(e) =>
-                      setMonthlyBillData({
-                        ...monthlyBillData,
-                        amount: e.target.value,
-                      })
-                    }
-                    className="mt-1 block w-full bg-[#2A2A2A] text-white border-gray-700 rounded-md shadow-sm p-2 focus:border-blue-500 focus:ring-blue-500"
-                    required
-                  />
-                </div>
-                <div>
-                  <label
-                    htmlFor="startDate"
-                    className="block text-sm font-medium text-gray-400"
-                  >
-                    Start Date
-                  </label>
-                  <input
-                    type="date"
-                    id="startDate"
-                    name="startDate"
-                    value={startDateInput}
-                    onChange={(e) => setStartDateInput(e.target.value)}
-                    className="mt-1 block w-full bg-[#2A2A2A] text-white border-gray-700 rounded-md shadow-sm p-2 focus:border-blue-500 focus:ring-blue-500"
-                    required
-                  />
-                </div>
-                <div>
-                  <label
-                    htmlFor="endDate"
-                    className="block text-sm font-medium text-gray-400"
-                  >
-                    End Date
-                  </label>
-                  <input
-                    type="date"
-                    id="endDate"
-                    name="endDate"
-                    value={endDateInput}
-                    onChange={(e) => setEndDateInput(e.target.value)}
-                    className="mt-1 block w-full bg-[#2A2A2A] text-white border-gray-700 rounded-md shadow-sm p-2 focus:border-blue-500 focus:ring-blue-500"
-                    required
-                  />
-                </div>
-                <div>
-                  <label
-                    htmlFor="duration"
-                    className="block text-sm font-medium text-gray-400"
-                  >
-                    Duration (months)
-                  </label>
-                  <input
-                    type="number"
-                    id="duration"
-                    name="duration"
-                    value={monthlyBillData.duration}
-                    onChange={(e) =>
-                      setMonthlyBillData({
-                        ...monthlyBillData,
-                        duration: e.target.value,
-                      })
-                    }
-                    className="mt-1 block w-full bg-[#2A2A2A] text-white border-gray-700 rounded-md shadow-sm p-2 focus:border-blue-500 focus:ring-blue-500"
-                    required
-                  />
-                </div>
-              </>
-            )}
-
+      <div className="w-full flex justify-center">
+        <div className="w-full md:max-w-xl">
+          <h2 className="text-2xl font-semibold mb-6 text-center text-white">
+            Add Item Purchased
+          </h2>
+          <div className="flex justify-center mb-6 space-x-4">
             <button
-              type="submit"
-              className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={
-                loading ||
-                (activeView === "scanReceipt" && !formData.receiptImage) ||
-                (activeView === "form" &&
-                  (!formData.itemName ||
-                    !formData.category ||
-                    !formData.date ||
-                    !formData.price ||
-                    !formData.quantity ||
-                    !formData.shopName)) ||
-                (activeView === "monthlyBill" &&
-                  (!monthlyBillData.name ||
-                    !monthlyBillData.issuer ||
-                    !monthlyBillData.category ||
-                    !monthlyBillData.amount ||
-                    !startDateInput ||
-                    !endDateInput ||
-                    !monthlyBillData.duration))
-              }
+              onClick={() => setActiveView("scanReceipt")}
+              className={`px-6 py-2 rounded-lg text-white font-medium transition-colors ${
+                activeView === "scanReceipt"
+                  ? "bg-blue-600 hover:bg-blue-700"
+                  : "bg-gray-700 hover:bg-gray-600"
+              }`}
             >
-              {loading
-                ? "Processing..."
-                : activeView === "scanReceipt"
-                ? "Scan Receipt"
-                : activeView === "form"
-                ? "Submit Purchase"
-                : "Add Bill"}
+              Scan Receipt
             </button>
-          </form>
+            <button
+              onClick={() => setActiveView("form")}
+              className={`px-6 py-2 rounded-lg text-white font-medium transition-colors ${
+                activeView === "form"
+                  ? "bg-blue-600 hover:bg-blue-700"
+                  : "bg-gray-700 hover:bg-gray-600"
+              }`}
+            >
+              Manual Form
+            </button>
+            <button
+              onClick={() => setActiveView("monthlyBill")}
+              className={`px-6 py-2 rounded-lg text-white font-medium transition-colors ${
+                activeView === "monthlyBill"
+                  ? "bg-blue-600 hover:bg-blue-700"
+                  : "bg-gray-700 hover:bg-gray-600"
+              }`}
+            >
+              Add Monthly Bill
+            </button>
+          </div>
+
+          {/* Error Display */}
+          {error && (
+            <div className="bg-red-500/10 border border-red-500 text-red-500 px-4 py-2 rounded-md">
+              {error}
+            </div>
+          )}
+
+          {success && (
+            <div className="bg-green-500/10 border border-green-500 text-green-500 px-4 py-2 rounded-md">
+              {success}
+            </div>
+          )}
+
+          {/* Scan card and forms */}
+          {activeView === "scanReceipt" && (
+            <div className="w-full flex flex-col items-center justify-center">
+              <div className="bg-[#18181b] border border-gray-700 rounded-xl p-4 mb-4 w-full max-w-full md:max-w-lg md:mx-auto">
+                <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-gray-700 rounded-lg cursor-pointer bg-[#2A2A2A] hover:bg-[#3A3A3A] transition-colors">
+                  <label htmlFor="receiptImage" className="text-center">
+                    <FiUploadCloud className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+                    <p className="text-white mb-1">
+                      {formData.receiptImage
+                        ? formData.receiptImage.name
+                        : "Drag & drop your receipt here, or click to browse"}
+                    </p>
+                    <p className="text-gray-400 text-sm mb-2">
+                      (Receipts must be in English)
+                    </p>
+                    <input
+                      type="file"
+                      id="receiptImage"
+                      name="receiptImage"
+                      accept="image/*"
+                      onChange={handleFileChange}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+              </div>
+              {formData.receiptImage && (
+                <button
+                  onClick={handleSubmit}
+                  className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-6 max-w-full md:max-w-lg"
+                  disabled={loading || !formData.receiptImage}
+                >
+                  {loading ? "Submitting..." : "Submit Receipt"}
+                </button>
+              )}
+            </div>
+          )}
+          {activeView === "form" && (
+            <form onSubmit={handleSubmit} className="space-y-6 w-full">
+              <div>
+                <label
+                  htmlFor="itemName"
+                  className="block text-sm font-medium text-gray-400"
+                >
+                  Item Name
+                </label>
+                <input
+                  type="text"
+                  id="itemName"
+                  name="itemName"
+                  value={formData.itemName}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full bg-[#2A2A2A] text-white border-gray-700 rounded-md shadow-sm p-2 focus:border-blue-500 focus:ring-blue-500"
+                  required
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="category"
+                  className="block text-sm font-medium text-gray-400"
+                >
+                  Category
+                </label>
+                <select
+                  id="category"
+                  name="category"
+                  value={formData.category}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full bg-[#2A2A2A] text-white border-gray-700 rounded-md shadow-sm p-2 focus:border-blue-500 focus:ring-blue-500 text-sm md:text-base"
+                  required
+                >
+                  <option value="">Select a category</option>
+                  {categories.map((category) => (
+                    <option key={category} value={category}>
+                      {category}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label
+                    htmlFor="quantity"
+                    className="block text-sm font-medium text-gray-400"
+                  >
+                    Quantity
+                  </label>
+                  <input
+                    type="number"
+                    id="quantity"
+                    name="quantity"
+                    value={formData.quantity}
+                    onChange={handleInputChange}
+                    className="mt-1 block w-full bg-[#2A2A2A] text-white border-gray-700 rounded-md shadow-sm p-2 focus:border-blue-500 focus:ring-blue-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="price"
+                    className="block text-sm font-medium text-gray-400"
+                  >
+                    Price (L.E.)
+                  </label>
+                  <input
+                    type="number"
+                    id="price"
+                    name="price"
+                    value={formData.price}
+                    onChange={handleInputChange}
+                    className="mt-1 block w-full bg-[#2A2A2A] text-white border-gray-700 rounded-md shadow-sm p-2 focus:border-blue-500 focus:ring-blue-500"
+                    step="0.01"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label
+                  htmlFor="date"
+                  className="block text-sm font-medium text-gray-400"
+                >
+                  Date
+                </label>
+                <div className="relative mt-1 rounded-md shadow-sm">
+                  <input
+                    type="date"
+                    id="date"
+                    name="date"
+                    value={formData.date}
+                    onChange={handleInputChange}
+                    className="block w-full bg-[#2A2A2A] text-white border-gray-700 rounded-md p-2 pl-10 focus:border-blue-500 focus:ring-blue-500"
+                    required
+                  />
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <FiCalendar className="h-5 w-5 text-gray-400" />
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label
+                  htmlFor="shopName"
+                  className="block text-sm font-medium text-gray-400"
+                >
+                  Shop Name
+                </label>
+                <input
+                  type="text"
+                  id="shopName"
+                  name="shopName"
+                  value={formData.shopName}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full bg-[#2A2A2A] text-white border-gray-700 rounded-md shadow-sm p-2 focus:border-blue-500 focus:ring-blue-500"
+                  required
+                />
+              </div>
+              <button
+                type="submit"
+                className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-6"
+                disabled={
+                  loading ||
+                  !formData.itemName ||
+                  !formData.category ||
+                  !formData.date ||
+                  !formData.price ||
+                  !formData.quantity ||
+                  !formData.shopName
+                }
+              >
+                Submit Purchase
+              </button>
+            </form>
+          )}
+          {activeView === "monthlyBill" && (
+            <form onSubmit={handleSubmit} className="space-y-6 w-full">
+              <div>
+                <label
+                  htmlFor="name"
+                  className="block text-sm font-medium text-gray-400"
+                >
+                  Bill Name
+                </label>
+                <input
+                  type="text"
+                  id="name"
+                  name="name"
+                  value={monthlyBillData.name}
+                  onChange={(e) =>
+                    setMonthlyBillData({
+                      ...monthlyBillData,
+                      name: e.target.value,
+                    })
+                  }
+                  className="mt-1 block w-full bg-[#2A2A2A] text-white border-gray-700 rounded-md shadow-sm p-2 focus:border-blue-500 focus:ring-blue-500"
+                  required
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="issuer"
+                  className="block text-sm font-medium text-gray-400"
+                >
+                  Issuer
+                </label>
+                <input
+                  type="text"
+                  id="issuer"
+                  name="issuer"
+                  value={monthlyBillData.issuer}
+                  onChange={(e) =>
+                    setMonthlyBillData({
+                      ...monthlyBillData,
+                      issuer: e.target.value,
+                    })
+                  }
+                  className="mt-1 block w-full bg-[#2A2A2A] text-white border-gray-700 rounded-md shadow-sm p-2 focus:border-blue-500 focus:ring-blue-500"
+                  required
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="category"
+                  className="block text-sm font-medium text-gray-400"
+                >
+                  Category
+                </label>
+                <select
+                  id="category"
+                  name="category"
+                  value={monthlyBillData.category}
+                  onChange={(e) =>
+                    setMonthlyBillData({
+                      ...monthlyBillData,
+                      category: e.target.value,
+                    })
+                  }
+                  className="mt-1 block w-full bg-[#2A2A2A] text-white border-gray-700 rounded-md shadow-sm p-2 focus:border-blue-500 focus:ring-blue-500"
+                  required
+                >
+                  <option value="">Select a category</option>
+                  {monthlyBillCategories.map((category) => (
+                    <option key={category} value={category}>
+                      {category}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label
+                  htmlFor="amount"
+                  className="block text-sm font-medium text-gray-400"
+                >
+                  Amount
+                </label>
+                <input
+                  type="number"
+                  id="amount"
+                  name="amount"
+                  value={monthlyBillData.amount}
+                  onChange={(e) =>
+                    setMonthlyBillData({
+                      ...monthlyBillData,
+                      amount: e.target.value,
+                    })
+                  }
+                  className="mt-1 block w-full bg-[#2A2A2A] text-white border-gray-700 rounded-md shadow-sm p-2 focus:border-blue-500 focus:ring-blue-500"
+                  required
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="startDate"
+                  className="block text-sm font-medium text-gray-400"
+                >
+                  Start Date
+                </label>
+                <input
+                  type="date"
+                  id="startDate"
+                  name="startDate"
+                  value={startDateInput}
+                  onChange={(e) => setStartDateInput(e.target.value)}
+                  className="mt-1 block w-full bg-[#2A2A2A] text-white border-gray-700 rounded-md shadow-sm p-2 focus:border-blue-500 focus:ring-blue-500"
+                  required
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="endDate"
+                  className="block text-sm font-medium text-gray-400"
+                >
+                  End Date
+                </label>
+                <input
+                  type="date"
+                  id="endDate"
+                  name="endDate"
+                  value={endDateInput}
+                  onChange={(e) => setEndDateInput(e.target.value)}
+                  className="mt-1 block w-full bg-[#2A2A2A] text-white border-gray-700 rounded-md shadow-sm p-2 focus:border-blue-500 focus:ring-blue-500"
+                  required
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="duration"
+                  className="block text-sm font-medium text-gray-400"
+                >
+                  Duration (months)
+                </label>
+                <input
+                  type="number"
+                  id="duration"
+                  name="duration"
+                  value={monthlyBillData.duration}
+                  onChange={(e) =>
+                    setMonthlyBillData({
+                      ...monthlyBillData,
+                      duration: e.target.value,
+                    })
+                  }
+                  className="mt-1 block w-full bg-[#2A2A2A] text-white border-gray-700 rounded-md shadow-sm p-2 focus:border-blue-500 focus:ring-blue-500"
+                  required
+                />
+              </div>
+              <button
+                type="submit"
+                className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-6"
+                disabled={
+                  loading ||
+                  !monthlyBillData.name ||
+                  !monthlyBillData.issuer ||
+                  !monthlyBillData.category ||
+                  !monthlyBillData.amount ||
+                  !startDateInput ||
+                  !endDateInput
+                }
+              >
+                Add Bill
+              </button>
+            </form>
+          )}
         </div>
       </div>
     </>
