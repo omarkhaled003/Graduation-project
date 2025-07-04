@@ -74,6 +74,9 @@ const ForgotPassword = () => {
       );
       setNewPassword("");
       setConfirmPassword("");
+      setTimeout(() => {
+        navigate("/login");
+      }, 1500);
     } catch (err) {
       setError(
         err.response?.data?.message ||

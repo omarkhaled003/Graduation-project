@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   FiSearch,
   FiPlus,
@@ -11,6 +11,7 @@ import { AiFillStar } from "react-icons/ai";
 import api from "../../utils/api"; // Import the shared API instance
 
 const ToBuy = () => {
+  const location = useLocation();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [products, setProducts] = useState([]);
@@ -24,8 +25,9 @@ const ToBuy = () => {
 
   const [allProducts, setAllProducts] = useState([]); // Stores all products fetched from API
   const [displayedProducts, setDisplayedProducts] = useState([]); // Products currently displayed after search/filter
-  const [aiSuggestions, setAiSuggestions] = useState([]); // AI suggestions
+  const [aiSuggestedProductName, setAiSuggestedProductName] = useState(""); // Store only the product name
   const [showSuccessMessage, setShowSuccessMessage] = useState(false); // Success message after purchase
+  const [aiSuggestedProductNames, setAiSuggestedProductNames] = useState([]);
 
   const fetchProducts = async () => {
     try {
@@ -111,19 +113,51 @@ const ToBuy = () => {
     }
   };
 
+  // On mount, load all AI suggestion product names from localStorage
+  useEffect(() => {
+    const stored = localStorage.getItem("aiSuggestedProductNames");
+    if (stored) {
+      setAiSuggestedProductNames(JSON.parse(stored));
+    }
+  }, []);
+
+  // Update fetchAiSuggestions to save all suggestions
   const fetchAiSuggestions = async () => {
     try {
       const response = await api.get("/ToBuyList/aisuggestion");
       let data = response.data;
-      // If data is not an array, wrap it or set to empty array
-      if (!Array.isArray(data)) {
-        data = data ? [data] : [];
+      let productName = "";
+      if (Array.isArray(data) && data.length > 0) {
+        productName =
+          data[0].suggestedProduct ||
+          data[0].productName ||
+          data[0].title ||
+          "";
+      } else if (
+        data &&
+        (data.suggestedProduct || data.productName || data.title)
+      ) {
+        productName = data.suggestedProduct || data.productName || data.title;
       }
-      setAiSuggestions(data);
+      setAiSuggestedProductName(productName);
+      // Save all suggestions to localStorage
+      if (productName) {
+        let allSuggestions = JSON.parse(
+          localStorage.getItem("aiSuggestedProductNames") || "[]"
+        );
+        if (!allSuggestions.includes(productName)) {
+          allSuggestions.push(productName);
+          localStorage.setItem(
+            "aiSuggestedProductNames",
+            JSON.stringify(allSuggestions)
+          );
+          setAiSuggestedProductNames(allSuggestions);
+        }
+      }
       setError(null);
     } catch (error) {
       console.error("Error fetching AI suggestions:", error);
-      setAiSuggestions([]); // Always set to array on error
+      setAiSuggestedProductName("");
     }
   };
 
@@ -233,10 +267,7 @@ const ToBuy = () => {
   };
 
   // Combine products and AI suggestions for display (must be before pagination logic)
-  const combinedProducts = [
-    ...products,
-    ...aiSuggestions.map((item) => ({ ...item, isAiSuggestion: true })),
-  ];
+  const combinedProducts = [...products];
 
   // Filter combined products by search query
   const filteredCombinedProducts = combinedProducts.filter((product) =>
@@ -295,6 +326,16 @@ const ToBuy = () => {
     }
     return pageNumbers;
   };
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get("fetchAi") === "1") {
+      fetchAiSuggestions();
+      // Remove the param so it doesn't fetch again on future visits
+      params.delete("fetchAi");
+      navigate({ search: params.toString() }, { replace: true });
+    }
+  }, [location.search, navigate]);
 
   return (
     <div className="p-4 md:p-8 space-y-6 min-h-screen bg-[#121212] text-white">
@@ -421,77 +462,93 @@ const ToBuy = () => {
             <p className="text-gray-400">No products in your list.</p>
           ) : (
             <div className="space-y-4 w-full">
-              {currentProducts.map((product, idx) => (
-                <div
-                  key={product.id || `ai-${idx}`}
-                  className="flex items-center justify-between gap-2 p-3 bg-[#18181b] border border-[#232323] rounded-2xl shadow-sm mb-3"
-                >
-                  {/* Product Image */}
-                  <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center overflow-hidden">
-                    <img
-                      src={
-                        product.thumbnail ||
-                        product.image ||
-                        "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23666'%3E%3Cpath d='M4 4h16v16H4V4zm2 2v12h12V6H6zm2 2h8v8H8V8z'/%3E%3C/svg%3E"
-                      }
-                      alt={
-                        product.title || product.productName || "AI Suggestion"
-                      }
-                      className="w-8 h-8 object-contain"
-                    />
-                  </div>
-                  {/* Product Info */}
-                  <div className="flex-1 min-w-0 ml-2 flex items-center gap-2">
-                    <div className="font-bold text-white text-sm truncate">
-                      {product.title || product.productName || `Suggestion`}
-                      {product.isAiSuggestion && (
-                        <span className="ml-2 text-blue-400 font-semibold">
-                          (AI Suggest)
-                        </span>
+              {currentProducts.map((product, idx) => {
+                // Check if this product is in the AI suggestions array
+                const isSuggested =
+                  aiSuggestedProductNames.includes(product.title) ||
+                  aiSuggestedProductNames.includes(product.productName);
+                let productName =
+                  product.title ||
+                  product.productName ||
+                  product.suggestedProduct ||
+                  "Suggestion";
+                return (
+                  <div
+                    key={product.id || `ai-${idx}`}
+                    className="flex items-center justify-between gap-2 p-3 bg-[#18181b] border border-[#232323] rounded-2xl shadow-sm mb-3"
+                  >
+                    {/* Product Image */}
+                    <div
+                      className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center overflow-hidden"
+                      style={{
+                        background: isSuggested
+                          ? "linear-gradient(135deg, #FFD700 60%, #FFFACD 100%)"
+                          : "#444",
+                      }}
+                    >
+                      {isSuggested ? (
+                        // Gold AI icon SVG
+                        <svg
+                          width="28"
+                          height="28"
+                          viewBox="0 0 24 24"
+                          fill="#FFD700"
+                        >
+                          <circle cx="12" cy="12" r="10" fill="#FFD700" />
+                          <text
+                            x="12"
+                            y="16"
+                            textAnchor="middle"
+                            fontSize="10"
+                            fill="#333"
+                            fontWeight="bold"
+                          >
+                            AI
+                          </text>
+                        </svg>
+                      ) : (
+                        <img
+                          src={
+                            product.thumbnail ||
+                            product.image ||
+                            "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23666'%3E%3Cpath d='M4 4h16v16H4V4zm2 2v12h12V6H6zm2 2h8v8H8V8z'/%3E%3C/svg%3E"
+                          }
+                          alt={productName}
+                          className="w-8 h-8 object-contain"
+                        />
                       )}
                     </div>
-                    {product.isAiSuggestion && (
-                      <span className="bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full ml-1">
-                        AI Suggest
-                      </span>
-                    )}
-                  </div>
-                  {/* Action Buttons */}
-                  <div className="flex flex-col sm:flex-row gap-2 ml-2">
-                    <button
-                      onClick={() =>
-                        navigate(`/best-price/${product.id || idx}`)
-                      }
-                      className="bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-full px-3 py-1 text-sm"
-                    >
-                      View
-                    </button>
-                    {!product.isAiSuggestion && (
+                    {/* Product Info */}
+                    <div className="flex-1 min-w-0 ml-2 flex items-center gap-2">
+                      <div className="font-bold text-white text-sm truncate">
+                        {productName}
+                        {isSuggested && (
+                          <span className="ml-2 text-blue-400 font-semibold text-xs">
+                            (suggestion)
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    {/* Action Buttons */}
+                    <div className="flex flex-col sm:flex-row gap-2 ml-2">
+                      <button
+                        onClick={() =>
+                          navigate(`/best-price/${product.id || idx}`)
+                        }
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-full px-3 py-1 text-sm"
+                      >
+                        View
+                      </button>
                       <button
                         onClick={() => removeProduct(product.id)}
                         className="bg-red-600 hover:bg-red-700 text-white font-semibold rounded-full px-3 py-1 text-sm"
                       >
                         Remove
                       </button>
-                    )}
-                    {product.isAiSuggestion && (
-                      <button
-                        onClick={() =>
-                          addToShoppingList({
-                            productName:
-                              product.productName ||
-                              product.title ||
-                              `Suggestion`,
-                          })
-                        }
-                        className="bg-green-600 hover:bg-green-700 text-white font-semibold rounded-full px-3 py-1 text-sm"
-                      >
-                        Add to List
-                      </button>
-                    )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
