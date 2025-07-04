@@ -206,9 +206,9 @@ const ToBuy = () => {
       setLoading(true);
       await api.post("/ToBuyList/BuySelectedProducts", shoppingList);
       setShoppingList([]); // Clear local shopping list after buying
-      fetchProducts(); // Refetch all products to update the list
-      fetchShoppingList(); // Also refetch shopping list to update
-      fetchAiSuggestions(); // Fetch new AI suggestions after purchase
+      await fetchProducts(); // Ensure products are refreshed
+      await fetchAiSuggestions(); // Ensure AI suggestions are refreshed
+      setCurrentPage(1); // Reset to first page for best UX
       setError(null);
 
       // Show success message
@@ -238,11 +238,20 @@ const ToBuy = () => {
     ...aiSuggestions.map((item) => ({ ...item, isAiSuggestion: true })),
   ];
 
-  // Pagination logic should use combinedProducts
-  const totalPages = Math.ceil(combinedProducts.length / productsPerPage);
+  // Filter combined products by search query
+  const filteredCombinedProducts = combinedProducts.filter((product) =>
+    (product.title || product.productName || "")
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase())
+  );
+
+  // Pagination logic should use filteredCombinedProducts
+  const totalPages = Math.ceil(
+    filteredCombinedProducts.length / productsPerPage
+  );
   const indexOfLastProduct = currentPage * productsPerPage;
   const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
-  const currentProducts = combinedProducts.slice(
+  const currentProducts = filteredCombinedProducts.slice(
     indexOfFirstProduct,
     indexOfLastProduct
   );
@@ -408,7 +417,7 @@ const ToBuy = () => {
             <p className="text-gray-400">Loading products...</p>
           ) : error ? (
             <p className="text-red-500">Error: {error}</p>
-          ) : combinedProducts.length === 0 ? (
+          ) : filteredCombinedProducts.length === 0 ? (
             <p className="text-gray-400">No products in your list.</p>
           ) : (
             <div className="space-y-4 w-full">
