@@ -62,7 +62,7 @@ const ForgotPassword = () => {
     setLoading(true);
     try {
       await axios.post(
-        "https://ecofy.yellowground-44551b7b.italynorth.azurecontainerapps.io/api/Mail/reset-password",
+        "https://ecofiy.yellowground-44551b7b.italynorth.azurecontainerapps.io/api/Mail/reset-password",
         {
           email,
           token: urlToken,

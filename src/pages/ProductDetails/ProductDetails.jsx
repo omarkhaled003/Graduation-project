@@ -161,7 +161,11 @@ const ProductDetails = () => {
 
       if (response.status === 200) {
         setPurchaseFormSuccess("Product added to purchased list successfully!");
-        setShowPurchaseForm(false);
+        // Wait 1.5 seconds, then redirect to /to-buy
+        setTimeout(() => {
+          setShowPurchaseForm(false);
+          navigate("/to-buy");
+        }, 1500);
         // Reset form
         setPurchaseFormData({
           itemName: "",

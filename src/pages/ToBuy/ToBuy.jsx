@@ -24,6 +24,8 @@ const ToBuy = () => {
 
   const [allProducts, setAllProducts] = useState([]); // Stores all products fetched from API
   const [displayedProducts, setDisplayedProducts] = useState([]); // Products currently displayed after search/filter
+  const [aiSuggestions, setAiSuggestions] = useState([]); // AI suggestions
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false); // Success message after purchase
 
   const fetchProducts = async () => {
     try {
@@ -79,6 +81,7 @@ const ToBuy = () => {
 
   useEffect(() => {
     fetchProducts();
+    fetchAiSuggestions();
   }, []);
 
   useEffect(() => {
@@ -106,6 +109,22 @@ const ToBuy = () => {
       setError(errorMessage);
     } finally {
       setShoppingListLoading(false);
+    }
+  };
+
+  const fetchAiSuggestions = async () => {
+    try {
+      const response = await api.get("/ToBuyList/aisuggestion");
+      let data = response.data;
+      // If data is not an array, wrap it or set to empty array
+      if (!Array.isArray(data)) {
+        data = data ? [data] : [];
+      }
+      setAiSuggestions(data);
+      setError(null);
+    } catch (error) {
+      console.error("Error fetching AI suggestions:", error);
+      setAiSuggestions([]); // Always set to array on error
     }
   };
 
@@ -190,7 +209,14 @@ const ToBuy = () => {
       setShoppingList([]); // Clear local shopping list after buying
       fetchProducts(); // Refetch all products to update the list
       fetchShoppingList(); // Also refetch shopping list to update
+      fetchAiSuggestions(); // Fetch new AI suggestions after purchase
       setError(null);
+
+      // Show success message
+      setShowSuccessMessage(true);
+      setTimeout(() => {
+        setShowSuccessMessage(false);
+      }, 3000); // Hide after 3 seconds
     } catch (err) {
       console.error("Error buying selected products:", err);
       let errorMessage = "Failed to buy selected products. ";
@@ -255,6 +281,12 @@ const ToBuy = () => {
     }
     return pageNumbers;
   };
+
+  // Combine products and AI suggestions for display
+  const combinedProducts = [
+    ...products,
+    ...aiSuggestions.map((item) => ({ ...item, isAiSuggestion: true })),
+  ];
 
   return (
     <div className="p-4 md:p-8 space-y-6 min-h-screen bg-[#121212] text-white">
@@ -352,6 +384,22 @@ const ToBuy = () => {
           </div>
         )}
 
+        {/* Success Message */}
+        {showSuccessMessage && (
+          <div className="fixed top-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-fade-in">
+            <div className="flex items-center gap-2">
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              <span>Purchase completed successfully!</span>
+            </div>
+          </div>
+        )}
+
         {/* Product list card styled as a Reports card */}
         <div className="bg-[#18181b] rounded-xl p-4 mb-4 w-full max-w-full">
           <h2 className="text-white text-lg font-semibold mb-4">
@@ -361,40 +409,73 @@ const ToBuy = () => {
             <p className="text-gray-400">Loading products...</p>
           ) : error ? (
             <p className="text-red-500">Error: {error}</p>
-          ) : products.length === 0 ? (
+          ) : combinedProducts.length === 0 ? (
             <p className="text-gray-400">No products in your list.</p>
           ) : (
             <div className="space-y-4 w-full">
-              {currentProducts.map((product) => (
-                <div className="flex items-center justify-between gap-2 p-3 bg-[#18181b] border border-[#232323] rounded-2xl shadow-sm mb-3">
+              {combinedProducts.map((product, idx) => (
+                <div
+                  key={product.id || `ai-${idx}`}
+                  className="flex items-center justify-between gap-2 p-3 bg-[#18181b] border border-[#232323] rounded-2xl shadow-sm mb-3"
+                >
                   {/* Product Image */}
                   <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center overflow-hidden">
                     <img
-                      src={product.thumbnail}
-                      alt={product.title}
+                      src={
+                        product.thumbnail ||
+                        product.image ||
+                        "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23666'%3E%3Cpath d='M4 4h16v16H4V4zm2 2v12h12V6H6zm2 2h8v8H8V8z'/%3E%3C/svg%3E"
+                      }
+                      alt={
+                        product.title || product.productName || "AI Suggestion"
+                      }
                       className="w-8 h-8 object-contain"
                     />
                   </div>
                   {/* Product Info */}
-                  <div className="flex-1 min-w-0 ml-2">
+                  <div className="flex-1 min-w-0 ml-2 flex items-center gap-2">
                     <div className="font-bold text-white text-sm truncate">
-                      {product.title}
+                      {product.title || product.productName || `Suggestion`}
                     </div>
+                    {product.isAiSuggestion && (
+                      <span className="bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full ml-1">
+                        AI Suggest
+                      </span>
+                    )}
                   </div>
                   {/* Action Buttons */}
                   <div className="flex flex-col sm:flex-row gap-2 ml-2">
                     <button
-                      onClick={() => navigate(`/best-price/${product.id}`)}
+                      onClick={() =>
+                        navigate(`/best-price/${product.id || idx}`)
+                      }
                       className="bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-full px-3 py-1 text-sm"
                     >
                       View
                     </button>
-                    <button
-                      onClick={() => removeProduct(product.id)}
-                      className="bg-red-600 hover:bg-red-700 text-white font-semibold rounded-full px-3 py-1 text-sm"
-                    >
-                      Remove
-                    </button>
+                    {!product.isAiSuggestion && (
+                      <button
+                        onClick={() => removeProduct(product.id)}
+                        className="bg-red-600 hover:bg-red-700 text-white font-semibold rounded-full px-3 py-1 text-sm"
+                      >
+                        Remove
+                      </button>
+                    )}
+                    {product.isAiSuggestion && (
+                      <button
+                        onClick={() =>
+                          addToShoppingList({
+                            productName:
+                              product.productName ||
+                              product.title ||
+                              `Suggestion`,
+                          })
+                        }
+                        className="bg-green-600 hover:bg-green-700 text-white font-semibold rounded-full px-3 py-1 text-sm"
+                      >
+                        Add to List
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}

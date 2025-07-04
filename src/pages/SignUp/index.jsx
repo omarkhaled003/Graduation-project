@@ -6,7 +6,7 @@ import axios from "axios";
 // Create axios instance with default config
 const api = axios.create({
   baseURL:
-    "https://ecofy.yellowground-44551b7b.italynorth.azurecontainerapps.io",
+    "https://ecofiy.yellowground-44551b7b.italynorth.azurecontainerapps.io",
   headers: {
     "Content-Type": "application/json",
     Accept: "application/json",
