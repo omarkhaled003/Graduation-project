@@ -81,7 +81,6 @@ const ToBuy = () => {
 
   useEffect(() => {
     fetchProducts();
-    fetchAiSuggestions();
   }, []);
 
   useEffect(() => {
@@ -233,11 +232,17 @@ const ToBuy = () => {
     }
   };
 
-  const totalPages = Math.ceil(displayedProducts.length / productsPerPage);
+  // Combine products and AI suggestions for display (must be before pagination logic)
+  const combinedProducts = [
+    ...products,
+    ...aiSuggestions.map((item) => ({ ...item, isAiSuggestion: true })),
+  ];
 
+  // Pagination logic should use combinedProducts
+  const totalPages = Math.ceil(combinedProducts.length / productsPerPage);
   const indexOfLastProduct = currentPage * productsPerPage;
   const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
-  const currentProducts = displayedProducts.slice(
+  const currentProducts = combinedProducts.slice(
     indexOfFirstProduct,
     indexOfLastProduct
   );
@@ -281,12 +286,6 @@ const ToBuy = () => {
     }
     return pageNumbers;
   };
-
-  // Combine products and AI suggestions for display
-  const combinedProducts = [
-    ...products,
-    ...aiSuggestions.map((item) => ({ ...item, isAiSuggestion: true })),
-  ];
 
   return (
     <div className="p-4 md:p-8 space-y-6 min-h-screen bg-[#121212] text-white">
@@ -413,7 +412,7 @@ const ToBuy = () => {
             <p className="text-gray-400">No products in your list.</p>
           ) : (
             <div className="space-y-4 w-full">
-              {combinedProducts.map((product, idx) => (
+              {currentProducts.map((product, idx) => (
                 <div
                   key={product.id || `ai-${idx}`}
                   className="flex items-center justify-between gap-2 p-3 bg-[#18181b] border border-[#232323] rounded-2xl shadow-sm mb-3"
@@ -436,6 +435,11 @@ const ToBuy = () => {
                   <div className="flex-1 min-w-0 ml-2 flex items-center gap-2">
                     <div className="font-bold text-white text-sm truncate">
                       {product.title || product.productName || `Suggestion`}
+                      {product.isAiSuggestion && (
+                        <span className="ml-2 text-blue-400 font-semibold">
+                          (AI Suggest)
+                        </span>
+                      )}
                     </div>
                     {product.isAiSuggestion && (
                       <span className="bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full ml-1">
